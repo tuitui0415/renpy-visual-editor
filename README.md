@@ -43,6 +43,8 @@ python3 scripts/package_editor.py --commit "$(git rev-parse HEAD)"
 
 最后一条命令在 `.dist/` 生成 `windows-x86_64.zip` 与 `macos-universal.zip`。每个包内的 `BUILD-INFO.json` 记录同一个精确 Git 提交和 Ren'Py 构建号。macOS 包包含 arm64 与 x86_64 通用二进制；Windows 包只包含 x86_64 运行时。
 
+当前 alpha 尚未使用项目自己的 Apple Developer ID 签名。macOS 从 GitHub 下载后可能被 Gatekeeper 拦截；首次启动可在 Finder 中按住 Control 点击 `renpy.app` 并选择“打开”。如果系统仍提示应用已损坏，可在终端进入解压目录后运行 `./renpy.sh`。正式无提示分发需要 Apple Developer ID 签名和公证。
+
 ## 已知开发事项
 
 - macOS 可在当前设备验证；Windows 发布包仍需在 Windows 真机执行验收矩阵。

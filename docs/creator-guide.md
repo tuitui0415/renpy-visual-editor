@@ -9,6 +9,14 @@
 
 两个包使用相同的 Ren'Py `8.5.3.26051504` 核心、项目格式和 `.rpy` 输出。项目目录可以直接在两台电脑之间移动，不需要转换。
 
+当前 alpha 尚未用项目自己的 Apple Developer ID 签名。macOS 首次打开时，先在 Finder 中按住 Control 点击 `renpy.app`，选择“打开”。如果 Gatekeeper 仍提示应用已损坏，可打开终端，进入解压后的目录并运行：
+
+```sh
+./renpy.sh
+```
+
+经过 Apple Developer ID 签名和公证后，正式版本才可以在新电脑上直接双击且不显示这类安全提示。
+
 ## 创建和打开项目
 
 1. 启动 Ren'Py Visual Editor。
