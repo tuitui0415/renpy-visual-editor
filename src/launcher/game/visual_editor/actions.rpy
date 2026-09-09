@@ -47,6 +47,7 @@ init python:
 
     VISUAL_EDITOR_STAGE_WIDTH = 640
     VISUAL_EDITOR_STAGE_HEIGHT = 360
+    visual_editor_stage_image_cache = {}
 
     VISUAL_EDITOR_KIND_NAMES = {
         EventKind.SCENE: _("Scene"),
@@ -133,6 +134,7 @@ init python:
 
     def visual_editor_open_project(project_path):
         global visual_editor_document, visual_editor_resources, visual_editor_module_labels
+        visual_editor_stage_image_cache.clear()
         visual_editor_document = visual_editor_load_core(project_path)
         visual_editor_resources = visual_editor_scan_assets(Path(project_path) / "game")
         visual_editor_module_labels = discover_module_labels(Path(project_path) / "game" / "code")
@@ -250,7 +252,14 @@ init python:
         path = Path(project.current.path) / "game" / relative_path
         if not path.is_file():
             return Text(_("Missing: {}").format(relative_path), color="#ff8d8d", size=18)
-        return renpy.display.im.Image(str(path))
+        stat = path.stat()
+        cache_key = (str(path), stat.st_mtime_ns, stat.st_size)
+        displayable = visual_editor_stage_image_cache.get(cache_key)
+        if displayable is None:
+            displayable = renpy.display.im.Data(path.read_bytes(), path.name)
+            visual_editor_stage_image_cache.clear()
+            visual_editor_stage_image_cache[cache_key] = displayable
+        return displayable
 
     def visual_editor_stage_dragged(drags, drop):
         event = visual_editor_document.selected_event

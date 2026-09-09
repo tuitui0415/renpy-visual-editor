@@ -52,7 +52,7 @@ init -1 python hide:
     # These control the name and version of the game, that are reported
     # with tracebacks and other debugging logs.
     config.name = "Ren'Py Visual Editor"
-    config.version = "0.1.0-alpha.3"
+    config.version = "0.1.0-alpha.4"
 
     #####################
     # Themes

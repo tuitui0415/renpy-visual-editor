@@ -29,6 +29,13 @@ class LauncherLayoutTests(unittest.TestCase):
         self.assertIn("xsize visual_editor_center_width", workspace)
         self.assertIn("hide screen bottom_info", entry)
 
+    def test_stage_loads_assets_outside_the_launcher_search_path(self):
+        actions = (
+            PROJECT_ROOT / "src/launcher/game/visual_editor/actions.rpy"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("renpy.display.im.Data(path.read_bytes(), path.name)", actions)
+
 
 if __name__ == "__main__":
     unittest.main()

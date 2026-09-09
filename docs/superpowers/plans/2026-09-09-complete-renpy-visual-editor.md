@@ -578,6 +578,24 @@ Build both platform archives from the repair commit, verify their manifests and 
 
 **Actual verification (2026-09-09):** The focused tests first failed on the old quit configuration, dot-prefixed preview filename, and absent CJK project font, then passed after the repair. All 47 editor-core tests and seven repository tests passed. HarfBuzz mapped representative intro Chinese text to nonzero glyphs in the bundled font. RenPy 8.5.3 lint completed for the assembled launcher, a freshly generated Chinese project, and the imported 180-dialogue project. A real `--warp game/visual_editor_preview.rpy:2` launch entered the intro and remained running past its first timed pause without a traceback; the font-configured launch also remained running without a runtime error. Both alpha.3 archives contain the font and license and passed ZIP integrity and manifest checks. The extracted macOS package reported the pinned RenPy build, completed launcher lint, and contained arm64 and x86_64 slices; the Windows launcher remained PE32+ x86-64. GitHub prerelease `v0.1.0-alpha.3` was published from source commit `1aa87e4`, and GitHub's recorded SHA-256 digests match the local archives.
 
+## Task 13: Load external project assets in the editor stage
+
+**Files:**
+- Modify: `src/launcher/game/visual_editor/actions.rpy`
+- Modify: `tests/test_launcher_layout.py`
+
+- [x] **Step 1: Reproduce and test the path failure**
+
+Selecting a real project background showed `Couldn't find file 'Users/.../assets/backgrounds/salt_lake.png'`. The launcher passed an absolute macOS path to RenPy's image loader, which only searches the launcher's own resource roots. Add a regression assertion that external stage images are constructed from file bytes.
+
+- [x] **Step 2: Implement the external image loader**
+
+Read the selected project image as bytes, use its filename only as a format hint, cache the resulting displayable, and clear the cache when a project is opened or refreshed.
+
+- [ ] **Step 3: Verify and publish alpha.4**
+
+Run the Python suites and RenPy launcher lint, verify the imported salt-lake background in the actual workspace, then build and publish both platform archives from one commit.
+
 ## Plan Self-Review
 
 Baseline consistency: Task 1 uses the confirmed local RenPy `8.5.3.26051504` SDK as a read-only input, stores only the custom source overlay in Git, and replaces the original Windows-only `Test-Path` checks with cross-platform Python tests.
