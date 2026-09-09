@@ -543,9 +543,11 @@ Assert that left, center, right, padding, and gaps total exactly 1440 pixels; th
 
 Use computed explicit column widths, a full-canvas opaque root style, modal input, zorder 200, and hide the launcher footer while the workspace label is active. Replace unsupported separator glyphs with ASCII so the launcher font does not show missing-character boxes.
 
-- [ ] **Step 4: Verify and publish alpha.2**
+- [x] **Step 4: Verify and publish alpha.2**
 
 Run all repository and editor tests, assemble the pinned SDK, run RenPy lint, build both platform archives from the final commit, verify their manifests and architectures, and publish `0.1.0-alpha.2` as a prerelease. Windows UI remains subject to the Windows target rows in the acceptance matrix.
+
+**Actual verification (2026-09-09):** The two new layout regression tests first failed because `core/layout.py` did not exist, then passed after the workspace correction. All seven repository tests and 46 editor-core tests passed, followed by RenPy 8.5.3 launcher lint. Both alpha.2 archives passed integrity, manifest, target-runtime isolation, generated-file exclusion, and architecture checks; the extracted macOS package reported the pinned RenPy build and completed launcher lint. GitHub prerelease `v0.1.0-alpha.2` was published from source commit `d59b45f`.
 
 ## Plan Self-Review
 
