@@ -102,7 +102,7 @@ Run: `git add renpy-sdk.lock.json scripts tests docs/upstream-renpy.md README.md
 **Interfaces:**
 - Produces: `ResourceKind`, `EventKind`, `AdvanceMode`, `Resource`, `Attachment`, `Event`, `Scene`, and `ValidationIssue` dataclasses; `scan_assets(game_dir: Path) -> list[Resource]`; `validate_portable_name(path: PurePosixPath) -> list[ValidationIssue]`.
 
-- [ ] **Step 1: Write failing scanner tests**
+- [x] **Step 1: Write failing scanner tests**
 
 ```python
 def test_scans_allowed_asset_roots(self):
@@ -121,25 +121,27 @@ def test_rejects_case_collision_and_windows_invalid_character(self):
     ))
 ```
 
-- [ ] **Step 2: Run the scanner tests to confirm failure**
+- [x] **Step 2: Run the scanner tests to confirm failure**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_resources -v`
 
 Expected: import failure because the core modules do not exist.
 
-- [ ] **Step 3: Implement the model and scanner**
+- [x] **Step 3: Implement the model and scanner**
 
 Implement string enums for `BACKGROUND`, `CHARACTER`, `CG`, `BGM`, `SFX`, `SCENE`, `TEXT`, and `CONTROL`; scan only the five declared asset roots; normalize every stored path to POSIX form; reject uppercase collisions, empty names, Windows reserved names, and `<>:"/\\|?*`.
 
-- [ ] **Step 4: Run the scanner tests to confirm success**
+- [x] **Step 4: Run the scanner tests to confirm success**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_resources -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add src/launcher/game/visual_editor; git commit -m "feat: add visual editor resource model"`
+
+**Actual verification (2026-09-09):** Four resource scanner tests passed. They cover declared-root filtering, deterministic ordering, resource-kind mapping, lowercase portable names, Windows reserved names, hidden files, and case-insensitive collisions.
 
 ## Task 3: Create projects from the fixed template and open them in the hub
 
