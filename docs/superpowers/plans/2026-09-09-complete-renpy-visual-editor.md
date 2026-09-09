@@ -151,6 +151,7 @@ Run: `git add src/launcher/game/visual_editor; git commit -m "feat: add visual e
 - Create: `src/project_template/game/code/.keep`
 - Create: `src/project_template/game/assets/*/.keep`
 - Create: `src/launcher/game/visual_editor/core/projects.py`
+- Create: `src/launcher/game/visual_editor/entry.rpy`
 - Create: `src/launcher/game/visual_editor/tests/test_projects.py`
 - Modify: `src/launcher/game/front_page.rpy`
 
@@ -158,7 +159,7 @@ Run: `git add src/launcher/game/visual_editor; git commit -m "feat: add visual e
 - Consumes: `scan_assets`.
 - Produces: `create_project(base_dir: Path, name: str) -> Path`, `is_visual_project(base_dir: Path) -> bool`, and a launcher action that opens the editor workspace.
 
-- [ ] **Step 1: Write failing project-template tests**
+- [x] **Step 1: Write failing project-template tests**
 
 ```python
 def test_create_project_creates_required_directories(self):
@@ -168,25 +169,27 @@ def test_create_project_creates_required_directories(self):
     assert is_visual_project(project)
 ```
 
-- [ ] **Step 2: Run tests to confirm failure**
+- [x] **Step 2: Run tests to confirm failure**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_projects -v`
 
 Expected: FAIL because `create_project` is absent.
 
-- [ ] **Step 3: Implement creation and hub entry**
+- [x] **Step 3: Implement creation and hub entry**
 
-Copy the template, reject invalid project names, create all five asset roots, and include a marker in `game/script.rpy` that identifies the project as editor-managed. Add one minimal “Visual Editor” action to the upstream launcher project pane without removing upstream run, lint, directory, or distribution actions.
+Copy the template, reject project names that are not portable between Windows and macOS, create all five asset roots, and include a marker in `game/script.rpy` that identifies the project as editor-managed. Unicode and internal spaces are allowed in project names; the lowercase ASCII rule applies to resource file names. Add “Create Visual Project” and “Visual Editor” actions to the upstream launcher without removing upstream project creation, run, lint, directory, or distribution actions. Until Task 5 replaces it, the editor action opens a minimal workspace placeholder.
 
-- [ ] **Step 4: Run tests and launcher smoke check**
+- [x] **Step 4: Run tests and launcher smoke check**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_projects -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add src; git commit -m "feat: create visual editor projects from template"`
+
+**Actual verification (2026-09-09):** Five project tests passed, including Unicode and internal-space names, invalid cross-platform names, marker detection, required folders, and no-overwrite behavior. The assembled RenPy launcher completed lint without visual-editor warnings. A generated project named `示例项目 01` also completed RenPy lint with one dialogue block and no script errors.
 
 ## Task 4: Parse and emit editor-owned `.rpy` event blocks
 
