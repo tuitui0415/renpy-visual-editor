@@ -572,11 +572,11 @@ Assert that generated projects configure an immediate quit action, include their
 
 Use `Quit(confirm=False)` in the minimal project template, rename the temporary entry to `game/visual_editor_preview.rpy`, and make the bundled Source Han Sans Lite the default style font. Verify the Python regression tests, CJK glyph shaping, RenPy lint, and an actual current-scene launch against the imported intro project.
 
-- [ ] **Step 4: Publish alpha.3**
+- [x] **Step 4: Publish alpha.3**
 
 Build both platform archives from the repair commit, verify their manifests and platform runtimes, and publish `0.1.0-alpha.3` as a GitHub prerelease. Windows UI remains subject to the Windows target rows in the acceptance matrix.
 
-**Actual verification (2026-09-09):** The focused tests first failed on the old quit configuration, dot-prefixed preview filename, and absent CJK project font, then passed after the repair. All 47 editor-core tests and seven repository tests passed. HarfBuzz mapped representative intro Chinese text to nonzero glyphs in the bundled font. RenPy 8.5.3 lint completed for the assembled launcher, a freshly generated Chinese project, and the imported 180-dialogue project. A real `--warp game/visual_editor_preview.rpy:2` launch entered the intro and remained running past its first timed pause without a traceback; the font-configured launch also remained running without a runtime error.
+**Actual verification (2026-09-09):** The focused tests first failed on the old quit configuration, dot-prefixed preview filename, and absent CJK project font, then passed after the repair. All 47 editor-core tests and seven repository tests passed. HarfBuzz mapped representative intro Chinese text to nonzero glyphs in the bundled font. RenPy 8.5.3 lint completed for the assembled launcher, a freshly generated Chinese project, and the imported 180-dialogue project. A real `--warp game/visual_editor_preview.rpy:2` launch entered the intro and remained running past its first timed pause without a traceback; the font-configured launch also remained running without a runtime error. Both alpha.3 archives contain the font and license and passed ZIP integrity and manifest checks. The extracted macOS package reported the pinned RenPy build, completed launcher lint, and contained arm64 and x86_64 slices; the Windows launcher remained PE32+ x86-64. GitHub prerelease `v0.1.0-alpha.3` was published from source commit `1aa87e4`, and GitHub's recorded SHA-256 digests match the local archives.
 
 ## Plan Self-Review
 
