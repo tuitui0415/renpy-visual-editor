@@ -245,6 +245,7 @@ Run: `git add src/launcher/game/visual_editor; git commit -m "feat: map visual e
 ## Task 5: Build the minimal editor workspace and event-list editing actions
 
 **Files:**
+- Create: `src/launcher/game/visual_editor/core/editing.py`
 - Create: `src/launcher/game/visual_editor/actions.rpy`
 - Create: `src/launcher/game/visual_editor/screens/workspace.rpy`
 - Create: `src/launcher/game/visual_editor/screens/event_list.rpy`
@@ -255,7 +256,7 @@ Run: `git add src/launcher/game/visual_editor; git commit -m "feat: map visual e
 - Consumes: parsed `Scene` objects.
 - Produces: `insert_event(scene_id, index, kind)`, `move_event(scene_id, from_index, to_index)`, `delete_event(scene_id, event_id)`, `set_note(event_id, value)`, and `save_project()` actions.
 
-- [ ] **Step 1: Write failing action tests**
+- [x] **Step 1: Write failing action tests**
 
 ```python
 def test_move_event_preserves_attached_audio(self):
@@ -269,25 +270,27 @@ def test_delete_event_removes_only_selected_event(self):
     assert [event.id for event in scene.events] == ["second"]
 ```
 
-- [ ] **Step 2: Run tests to confirm failure**
+- [x] **Step 2: Run tests to confirm failure**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_event_actions -v`
 
 Expected: FAIL because editing actions do not exist.
 
-- [ ] **Step 3: Implement the workspace screens and actions**
+- [x] **Step 3: Implement the workspace screens and actions**
 
 Use a three-pane screen: project tree left, vertical event list and stage center, Inspector right. Add toolbar actions for Scene, Background, Character, Video CG, Text, Pause, Choice, Interaction, and Code. Make every row show kind, short content, advance mode, and a note indicator. Use plain panels, text, borders, and functional resource thumbnails only.
 
-- [ ] **Step 4: Run action tests and launch the launcher**
+- [x] **Step 4: Run action tests and launch the launcher**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_event_actions -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add src/launcher/game/visual_editor; git commit -m "feat: add visual event-list workspace"`
+
+**Actual verification (2026-09-09):** The action test module first failed because `core/editing.py` did not exist, then all six action and persistence tests passed after implementation. The full test suite through Task 5 passed 26 tests. The reassembled RenPy 8.5.3 launcher completed lint with no visual-editor errors or warnings. The workspace now loads the selected project, shows scenes and events in a three-pane layout, supports insert, reorder, delete, field editing, notes, dirty state, and saves managed blocks while preserving surrounding source.
 
 ## Task 6: Add Inspector editing, resources, notes, and direct stage manipulation
 

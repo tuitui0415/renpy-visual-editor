@@ -38,23 +38,7 @@ label visual_editor_new_project:
     jump visual_editor_workspace
 
 
-screen visual_editor_workspace():
-    frame:
-        style_group "l"
-        style "l_root"
-
-        has vbox
-
-        frame style "l_label":
-            text _("Visual Editor") style "l_label_text"
-
-        add SPACER
-        text _("Project: [project.current.display_name!q]")
-        text _("The visual editor workspace is ready for event editing components.")
-        add SPACER
-        textbutton _("Return to Projects") action Return()
-
-
 label visual_editor_workspace:
+    $ visual_editor_open_project(project.current.path)
     call screen visual_editor_workspace
     jump front_page
