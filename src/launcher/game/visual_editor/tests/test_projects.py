@@ -29,6 +29,9 @@ class ProjectCreationTests(unittest.TestCase):
 
         options = (project / "game" / "options.rpy").read_text(encoding="utf-8")
         self.assertIn("define config.quit_action = Quit(confirm=False)", options)
+        self.assertIn('font "fonts/source_han_sans_lite.ttf"', options)
+        self.assertTrue((project / "game" / "fonts" / "source_han_sans_lite.ttf").is_file())
+        self.assertTrue((project / "game" / "fonts" / "source_han_sans_lite-OFL.txt").is_file())
         self.assertIn("game/visual_editor_preview.rpy", (project / ".gitignore").read_text(encoding="utf-8"))
 
     def test_rejects_nonportable_project_names(self):

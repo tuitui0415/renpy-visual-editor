@@ -557,6 +557,8 @@ Run all repository and editor tests, assemble the pinned SDK, run RenPy lint, bu
 - Modify: `src/launcher/game/visual_editor/tests/test_projects.py`
 - Modify: `src/project_template/game/options.rpy`
 - Modify: `src/project_template/.gitignore`
+- Create: `src/project_template/game/fonts/source_han_sans_lite.ttf`
+- Create: `src/project_template/game/fonts/source_han_sans_lite-OFL.txt`
 
 - [x] **Step 1: Reproduce both runtime failures**
 
@@ -564,17 +566,17 @@ Closing a generated minimal project invoked RenPy's default confirmation action,
 
 - [x] **Step 2: Add focused regression tests**
 
-Assert that generated projects configure an immediate quit action and that the temporary preview uses a normal compilable filename which is excluded from Git and distributions.
+Assert that generated projects configure an immediate quit action, include their cross-platform CJK font and license, and use a normal compilable preview filename which is excluded from Git and distributions.
 
 - [x] **Step 3: Implement and verify the repair**
 
-Use `Quit(confirm=False)` in the minimal project template and rename the temporary entry to `game/visual_editor_preview.rpy`. Verify the Python regression tests, RenPy lint, and an actual current-scene launch against the imported intro project.
+Use `Quit(confirm=False)` in the minimal project template, rename the temporary entry to `game/visual_editor_preview.rpy`, and make the bundled Source Han Sans Lite the default style font. Verify the Python regression tests, CJK glyph shaping, RenPy lint, and an actual current-scene launch against the imported intro project.
 
 - [ ] **Step 4: Publish alpha.3**
 
 Build both platform archives from the repair commit, verify their manifests and platform runtimes, and publish `0.1.0-alpha.3` as a GitHub prerelease. Windows UI remains subject to the Windows target rows in the acceptance matrix.
 
-**Actual verification (2026-09-09):** The two focused tests first failed on the old quit configuration and dot-prefixed preview filename, then passed after the repair. All 47 editor-core tests and seven repository tests passed. RenPy 8.5.3 lint completed for the assembled launcher and the imported 180-dialogue project. A real `--warp game/visual_editor_preview.rpy:2` launch entered the intro and remained running past its first timed pause without a traceback.
+**Actual verification (2026-09-09):** The focused tests first failed on the old quit configuration, dot-prefixed preview filename, and absent CJK project font, then passed after the repair. All 47 editor-core tests and seven repository tests passed. HarfBuzz mapped representative intro Chinese text to nonzero glyphs in the bundled font. RenPy 8.5.3 lint completed for the assembled launcher, a freshly generated Chinese project, and the imported 180-dialogue project. A real `--warp game/visual_editor_preview.rpy:2` launch entered the intro and remained running past its first timed pause without a traceback; the font-configured launch also remained running without a runtime error.
 
 ## Plan Self-Review
 

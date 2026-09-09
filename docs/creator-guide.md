@@ -166,4 +166,4 @@ git add game .gitignore
 git commit -m "story: add chapter 1"
 ```
 
-提交 `.rpy`、结构化备注和素材；不要提交存档、日志、编译缓存或 `visual_editor_preview.rpy`。
+提交 `.rpy`、结构化备注、项目内置字体和素材；不要提交存档、日志、编译缓存或 `visual_editor_preview.rpy`。新建项目已将 `game/fonts/source_han_sans_lite.ttf` 设为默认字体，可直接显示中文；替换字体时应同时保留相应许可证文件。
