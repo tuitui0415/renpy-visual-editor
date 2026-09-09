@@ -66,7 +66,11 @@ assets/sfx/door_close.ogg
 
 ## 舞台与 Inspector
 
-背景、角色、视频 CG 和文本可以在舞台预览。角色、视频或文本支持：
+选择事件或修改内容后，中间舞台会等待约 300 毫秒，然后调用当前项目的 Ren'Py 生成新画面。截图使用项目自己的分辨率、字体、`screen say`、对话框和其他界面定义，因此文字位置和对话框外观与游戏运行时一致。刷新期间显示“正在刷新…”，并继续保留上一张成功画面；如果项目脚本报错，舞台保留旧画面并显示文件、行号和错误信息。
+
+自动舞台预览不会播放声音。视频和过渡只显示截图触发时的稳定单帧。代码、选择和互动事件不会被自动执行；选中这些事件时会显示此前可以安全重建的画面和原因提示，需要完整交互时使用 **Preview**。
+
+背景、角色和视频 CG 支持：
 
 - 拖动主体改变位置；
 - 拖动右下缩放手柄，或使用 **Zoom − / Zoom +**；
@@ -134,7 +138,7 @@ label gameplay_search_deck:
 - **Preview**：先保存，再通过临时入口运行当前场景；游戏退出后删除入口。
 - **Refresh**：重新扫描外部修改的脚本、资源和玩法标签。
 
-临时预览文件同时被项目 `.gitignore` 和 Ren'Py 构建规则排除。
+完整场景预览和自动舞台截图使用的临时文件同时被项目 `.gitignore` 和 Ren'Py 构建规则排除。
 
 ## 外部编辑器
 
@@ -166,4 +170,4 @@ git add game .gitignore
 git commit -m "story: add chapter 1"
 ```
 
-提交 `.rpy`、结构化备注、项目内置字体和素材；不要提交存档、日志、编译缓存或 `visual_editor_preview.rpy`。新建项目已将 `game/fonts/source_han_sans_lite.ttf` 设为默认字体，可直接显示中文；替换字体时应同时保留相应许可证文件。
+提交 `.rpy`、结构化备注、项目内置字体和素材；不要提交存档、日志、编译缓存、`visual_editor_preview.rpy` 或 `visual_editor_stage_render.rpy`。新建项目已将 `game/fonts/source_han_sans_lite.ttf` 设为默认字体，可直接显示中文；替换字体时应同时保留相应许可证文件。

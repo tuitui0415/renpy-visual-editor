@@ -22,6 +22,8 @@
 | macOS 发行包 | Apple Silicon 与 Intel | 解压后应用或脚本启动，二进制同时包含 arm64 和 x86_64 | AUTOMATED PASS — 解压后 `renpy.sh --version` 与启动器 lint 通过，应用入口含 arm64/x86_64；Intel 实机仍为 NOT RUN |
 | macOS 首次启动 | 从 GitHub 下载的 alpha 包 | Control 点击后允许打开，或从终端运行 `./renpy.sh` | PASS — 下载包校验和正确，隔离标记导致 Gatekeeper 拦截，终端入口成功报告固定 Ren'Py 版本；项目签名与公证待配置 |
 | 编辑器三栏布局 | 1440 × 900 虚拟画布，窗口缩放 | 场景/资源、中间舞台/事件和右侧 Inspector 全部位于窗口内，启动器底栏不透出 | AUTOMATED PASS — 列宽总和、全屏模态层和底栏隐藏回归测试；修复前截图已复现溢出 |
+| 自动真实舞台预览 | macOS Apple Silicon，Ren'Py 8.5.3 | 选择或修改后自动显示项目分辨率、字体、角色和自定义对话框；旧任务不能覆盖新画面 | PASS — 1280×720 集成截图的蓝色背景、绿色角色和红色自定义 `screen say` 像素均通过；实际 `123` 项目的引子、序章、盐湖背景和角色方块均成功渲染，热启动单帧约 0.7–0.9 秒 |
+| 自动真实舞台预览 | Windows x86_64，Ren'Py 8.5.3 | 使用同一源码和 Windows `pythonw.exe` 自动截图，无残留子窗口 | NOT RUN — 命令构造与队列行为自动测试通过，仍需 Windows 实机运行 |
 
 ## 自动验证命令
 

@@ -26,7 +26,7 @@ style ve_selected_button is button:
     background Solid("#35506f")
 
 style ve_selection is frame:
-    background Solid("#29313b80")
+    background Solid("#00000000")
     padding (2, 2)
 
 style ve_handle is frame:

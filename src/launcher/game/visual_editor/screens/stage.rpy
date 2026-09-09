@@ -77,6 +77,11 @@ screen visual_editor_stage():
                             style "ve_selection"
                             xsize item_width
                             ysize item_height
+                            has fixed
+                            add Solid("#5ca9ffcc") xsize item_width ysize 2 yalign 0.0
+                            add Solid("#5ca9ffcc") xsize item_width ysize 2 yalign 1.0
+                            add Solid("#5ca9ffcc") ysize item_height xsize 2 xalign 0.0
+                            add Solid("#5ca9ffcc") ysize item_height xsize 2 xalign 1.0
 
                     if selected_event.kind != EventKind.BACKGROUND:
                         drag:
