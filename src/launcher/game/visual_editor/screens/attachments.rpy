@@ -11,7 +11,7 @@ screen visual_editor_attachments(event):
 
     if event.advance in (AdvanceMode.AUTO, AdvanceMode.VIDEO):
         text _("Delay in seconds")
-        input value VisualEditorNumericInputValue(event, "advance_delay")
+        use visual_editor_editable_input(VisualEditorNumericInputValue(event, "advance_delay"))
 
     null height 8
     text _("Attachments") style "ve_heading"
@@ -42,9 +42,9 @@ screen visual_editor_attachments(event):
                         action Function(visual_editor_assign_attachment_resource, attachment, attachment_path)
                         selected (attachment.parameters.get("asset") == attachment_path)
                 text _("Fade in")
-                input value VisualEditorMappingInputValue(attachment.parameters, "fadein", numeric=True)
+                use visual_editor_editable_input(VisualEditorMappingInputValue(attachment.parameters, "fadein", numeric=True))
                 text _("Fade out")
-                input value VisualEditorMappingInputValue(attachment.parameters, "fadeout", numeric=True)
+                use visual_editor_editable_input(VisualEditorMappingInputValue(attachment.parameters, "fadeout", numeric=True))
                 textbutton _("Loop: [attachment.parameters.get('loop', False)]"):
                     action Function(
                         visual_editor_set_attachment_parameter,
@@ -64,7 +64,7 @@ screen visual_editor_attachments(event):
                             action Function(visual_editor_set_attachment_parameter, attachment, "effect", effect)
                             selected (attachment.parameters.get("effect") == effect)
                 text _("Duration")
-                input value VisualEditorMappingInputValue(attachment.parameters, "duration", numeric=True)
+                use visual_editor_editable_input(VisualEditorMappingInputValue(attachment.parameters, "duration", numeric=True))
 
             elif attachment.kind == "video":
                 text _("End behavior")
@@ -87,4 +87,4 @@ screen visual_editor_attachments(event):
                         ]
 
             text _("Attachment note")
-            input value VisualEditorFieldInputValue(attachment, "note")
+            use visual_editor_editable_input(VisualEditorFieldInputValue(attachment, "note"), multiline=True)

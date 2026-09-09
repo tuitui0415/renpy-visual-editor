@@ -53,6 +53,30 @@ class LauncherLayoutTests(unittest.TestCase):
         self.assertIn("正在刷新…", stage)
         self.assertIn("visual_editor_stage_render_error", stage)
 
+    def test_editor_inputs_are_clickable_and_keep_focus_across_refreshes(self):
+        actions = (
+            PROJECT_ROOT / "src/launcher/game/visual_editor/actions.rpy"
+        ).read_text(encoding="utf-8")
+        inspector = (
+            PROJECT_ROOT / "src/launcher/game/visual_editor/screens/inspector.rpy"
+        ).read_text(encoding="utf-8")
+        input_screen = (
+            PROJECT_ROOT / "src/launcher/game/visual_editor/screens/input.rpy"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("class VisualEditorFieldInputValue(FieldInputValue)", actions)
+        self.assertIn("action input_value.Enable()", input_screen)
+        self.assertIn("use visual_editor_editable_input", inspector)
+        self.assertNotIn("input value VisualEditorFieldInputValue", inspector)
+
+    def test_text_preview_can_focus_the_inspector_text_field(self):
+        stage = (
+            PROJECT_ROOT / "src/launcher/game/visual_editor/screens/stage.rpy"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('VisualEditorFieldInputValue(selected_event, "text")', stage)
+        self.assertIn("action stage_text_input.Enable()", stage)
+
 
 if __name__ == "__main__":
     unittest.main()

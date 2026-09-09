@@ -80,7 +80,7 @@ class AttachmentEmissionTests(unittest.TestCase):
         self.assertIn("        zoom 1.1", text)
         self.assertIn("    with dissolve", text)
 
-    def test_timed_advance_emits_numeric_pause(self):
+    def test_timed_advance_keeps_dialogue_visible_during_delay(self):
         event = Event(
             "caption",
             EventKind.TEXT,
@@ -91,8 +91,8 @@ class AttachmentEmissionTests(unittest.TestCase):
 
         text = emit_scene(Scene("start", [event]))
 
-        self.assertIn('"A moment passes.{nw}"', text)
-        self.assertIn("    pause 1.5", text)
+        self.assertIn('"A moment passes.{nw=1.5}"', text)
+        self.assertNotIn("    pause 1.5", text)
 
     def test_attachments_and_advance_round_trip(self):
         original = Event(
@@ -111,6 +111,23 @@ class AttachmentEmissionTests(unittest.TestCase):
         self.assertEqual(parsed.advance, AdvanceMode.AUTO)
         self.assertEqual(parsed.advance_delay, 2.0)
         self.assertEqual(parsed.attachments, original.attachments)
+
+    def test_legacy_auto_pause_loads_as_editable_text(self):
+        source = (
+            "label start:\n"
+            "    # visual-editor: begin old_auto\n"
+            '    # visual-editor-advance: {"mode":"auto","delay":2.8}\n'
+            '    "旧格式文字{nw}"\n'
+            "    pause 2.8\n"
+            "    # visual-editor: end old_auto\n"
+        )
+
+        event = parse_editor_blocks(source)[0].events[0]
+
+        self.assertEqual(event.kind, EventKind.TEXT)
+        self.assertEqual(event.text, "旧格式文字")
+        self.assertEqual(event.advance, AdvanceMode.AUTO)
+        self.assertEqual(event.advance_delay, 2.8)
 
 
 if __name__ == "__main__":

@@ -14,5 +14,5 @@ screen visual_editor_preferences():
 
         null height 12
         text _("External editor executable")
-        input value VisualEditorPreferenceInputValue()
+        use visual_editor_editable_input(VisualEditorPreferenceInputValue())
         text _("Leave empty to use the operating system default application.") style "ve_muted"

@@ -56,6 +56,18 @@ screen visual_editor_stage():
                     xalign 0.5
                     yalign 0.5
 
+            if selected_event and selected_event.kind == EventKind.TEXT:
+                $ stage_text_input = VisualEditorFieldInputValue(selected_event, "text")
+                button:
+                    action stage_text_input.Enable()
+                    background None
+                    hover_background Solid("#5ca9ff18")
+                    xpos frame_x
+                    ypos frame_y
+                    xsize frame_width
+                    ysize frame_height
+                    tooltip _("Click to edit this text in Inspector")
+
             if selected_event and visual_editor_stage_exact_displayable is not None and selected_event.kind in (EventKind.BACKGROUND, EventKind.CHARACTER, EventKind.CG):
                 $ item_width = frame_width if selected_event.kind == EventKind.BACKGROUND else max(24, int(frame_width * 0.375 * selected_event.zoom))
                 $ item_height = frame_height if selected_event.kind == EventKind.BACKGROUND else max(24, int(frame_height * 0.5 * selected_event.zoom))

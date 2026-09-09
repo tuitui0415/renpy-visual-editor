@@ -6,10 +6,10 @@
 |---|---|---|---|
 | Windows 鼠标 | Windows x86_64，鼠标 | 所有事件、资源、Inspector 和分支操作可通过左键与滚轮完成 | NOT RUN — 需 Windows |
 | Windows 触控板 | Windows x86_64，触控板 | 双指滚动列表，Space 加左键平移舞台，不依赖右键 | NOT RUN — 需 Windows |
-| macOS 鼠标 | macOS，鼠标 | 按钮、滚轮、拖动、缩放手柄可操作 | NOT RUN — 需人工 UI 验收 |
+| macOS 鼠标 | macOS，鼠标 | 按钮、滚轮、拖动、缩放手柄可操作 | PARTIAL PASS — Inspector Text 已实机点击、全选、输入并触发 Stage 刷新；滚轮和手柄仍待完整人工验收 |
 | macOS 触控板 | macOS，触控板 | 双指滚动和 Space 平移可操作 | NOT RUN — 需人工 UI 验收 |
 | 保存与重新载入 | 两个平台 | 保存直接更新 `.rpy`，重新打开后事件、变换、附加与备注一致 | AUTOMATED PASS — round trip 与持久化测试 |
-| 自动推进 | 两个平台 | 文本不先等点击，按设定秒数继续 | AUTOMATED PASS — `{nw}` 与数值 `pause` 输出测试 |
+| 自动推进 | 两个平台 | 文字和对话框按设定秒数保持显示，然后自动继续 | PASS — `{nw=秒数}` 生成与旧格式迁移测试通过；实际 `123` 项目的 2.8 秒引子已运行确认 |
 | 回滚 | 两个平台 | 普通剧情使用 Ren'Py 原生回滚；互动状态可恢复 | AUTOMATED PASS — 原生 store 模板和编辑器撤销测试；运行时人工验收待执行 |
 | 视频 CG | 两个平台 | WebM 非循环播放，按设置恢复、透明结束或保留最后一帧 | AUTOMATED PASS — 生成语法 lint；播放人工验收待执行 |
 | 音频淡入淡出 | 两个平台 | BGM、环境音、SFX 输出正确通道、循环、停止和淡入淡出 | AUTOMATED PASS — 生成测试与 lint |

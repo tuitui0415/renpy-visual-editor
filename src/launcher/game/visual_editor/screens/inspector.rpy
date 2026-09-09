@@ -16,31 +16,32 @@ screen visual_editor_inspector(panel_width=300):
                 has vbox
                 spacing 6
                 text "[VISUAL_EDITOR_KIND_NAMES[selected_event.kind]]" style "ve_muted"
-                text _("Asset / target")
-                input value VisualEditorFieldInputValue(selected_event, "asset")
+                if selected_event.kind in (EventKind.BACKGROUND, EventKind.CHARACTER, EventKind.CG):
+                    text _("Asset")
+                    use visual_editor_editable_input(VisualEditorFieldInputValue(selected_event, "asset"))
 
                 if selected_event.kind == EventKind.TEXT:
                     text _("Speaker")
-                    input value VisualEditorFieldInputValue(selected_event, "speaker")
+                    use visual_editor_editable_input(VisualEditorFieldInputValue(selected_event, "speaker"))
                     text _("Text")
-                    input value VisualEditorFieldInputValue(selected_event, "text")
+                    use visual_editor_editable_input(VisualEditorFieldInputValue(selected_event, "text"), multiline=True)
 
                 if selected_event.kind in (EventKind.CHARACTER, EventKind.CG, EventKind.TEXT):
                     text _("X alignment (0–1)")
-                    input value VisualEditorNumericInputValue(selected_event, "xalign")
+                    use visual_editor_editable_input(VisualEditorNumericInputValue(selected_event, "xalign"))
                     text _("Y alignment (0–1)")
-                    input value VisualEditorNumericInputValue(selected_event, "yalign")
+                    use visual_editor_editable_input(VisualEditorNumericInputValue(selected_event, "yalign"))
                     text _("Zoom")
-                    input value VisualEditorNumericInputValue(selected_event, "zoom")
+                    use visual_editor_editable_input(VisualEditorNumericInputValue(selected_event, "zoom"))
                     text _("Layer")
-                    input value VisualEditorNumericInputValue(selected_event, "zorder", integer=True)
+                    use visual_editor_editable_input(VisualEditorNumericInputValue(selected_event, "zorder", integer=True))
 
                 text _("Note")
-                input value VisualEditorFieldInputValue(selected_event, "note")
+                use visual_editor_editable_input(VisualEditorFieldInputValue(selected_event, "note"), multiline=True)
 
                 for attachment in selected_event.attachments:
                     text _("Attachment: [attachment.kind]") style "ve_muted"
-                    input value VisualEditorFieldInputValue(attachment, "note")
+                    use visual_editor_editable_input(VisualEditorFieldInputValue(attachment, "note"), multiline=True)
 
                 use visual_editor_attachments(selected_event)
                 use visual_editor_branches(selected_event)

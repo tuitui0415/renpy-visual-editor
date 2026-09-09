@@ -971,6 +971,47 @@ Mark completed steps only after their checks run, add commands and observed outc
 
 **Actual verification (2026-09-09):** The integration test first exposed a one-level software-renderer color rounding difference and then passed with a two-level tolerance. The final run passed all 58 editor-core tests and 11 repository tests, including the real 1280 × 720 capture with blue background, green character, Chinese text, and the project-defined red `screen say`. The actual `123` project rendered representative intro text, prologue text, salt-lake background, and character-square frames in 0.710–0.848 seconds after warm-up. Both archives were built from source commit `56a958e`, passed ZIP integrity and generated-artifact exclusion checks, and contained the bundled CJK font and license. The Windows launcher is PE32+ x86-64; the macOS runtime contains x86_64 and arm64 slices, reports RenPy `8.5.3.26051504`, and completed extracted launcher lint. GitHub prerelease `v0.1.0-alpha.5` was published, alpha.4 was marked as replaced, and GitHub’s recorded digests match the local SHA-256 values: macOS `4cd6f93d2024463a4c9c845f80580d4652cc90889e896ab1eb104e10692d2e5d`, Windows `6a5546bfa8fcdaa3164d903b1a40ac0a30e323af21f6c864a5c2f917f4e3cbda`. Windows runtime behavior remains `NOT RUN` pending a Windows machine.
 
+### Task 19: Restore editable inputs and keep Auto text visible
+
+**Files:**
+- Modify: `src/launcher/game/visual_editor/actions.rpy`
+- Create: `src/launcher/game/visual_editor/screens/input.rpy`
+- Modify: `src/launcher/game/visual_editor/screens/inspector.rpy`
+- Modify: `src/launcher/game/visual_editor/screens/stage.rpy`
+- Modify: `src/launcher/game/visual_editor/screens/attachments.rpy`
+- Modify: `src/launcher/game/visual_editor/screens/branches.rpy`
+- Modify: `src/launcher/game/visual_editor/screens/preferences.rpy`
+- Modify: `src/launcher/game/visual_editor/core/rpy_blocks.py`
+- Modify: `src/launcher/game/visual_editor/tests/test_emission.py`
+- Modify: `tests/test_launcher_layout.py`
+- Modify: product documentation and alpha packaging version
+
+- [x] **Step 1: Reproduce both regressions and add failing checks**
+
+Assert that reusable input values inherit RenPy's equality-aware `FieldInputValue` or `DictInputValue`, every editable input has an explicit mouse `Enable()` action, Stage can focus the selected Text field, and timed Auto text emits `{nw=seconds}` without a following `pause`.
+
+- [x] **Step 2: Make Inspector and Stage text input clickable**
+
+Use stable equality for field, number, mapping, and preference input values. Wrap the visible input in a full-width clickable button. When a Text event is selected, clicking its Stage frame enables the same Text input value. Keep the existing 300-millisecond render scheduling in `set_text`.
+
+- [x] **Step 3: Keep timed Auto dialogue visible**
+
+Generate `{nw=seconds}` on the dialogue itself so RenPy dismisses it only after the configured delay. Continue reading the previous `{nw}` plus numeric `pause` representation, stripping both generated parts from editable text and rewriting it to the new form on save.
+
+- [x] **Step 4: Migrate and run the user's project**
+
+Back up `/Users/yunhanwei/Desktop/天狼星/123/game/story/00_intro.rpy`, migrate all managed Auto events, run RenPy lint, and start the game to observe the dialogue during the configured 2.8-second interval.
+
+- [x] **Step 5: Exercise the fixed editor UI**
+
+Open the actual project in the assembled editor, select a Text event, click the Inspector Text area, replace it with a temporary test value, and verify the Inspector, event row, and Stage all update. Reload the project without saving so the temporary value does not enter the script.
+
+- [ ] **Step 6: Complete validation and publish alpha.6**
+
+Run both full Python suites and launcher/project lint. Build Windows x86_64 and macOS universal archives from one source commit, verify their manifests and binaries, publish `v0.1.0-alpha.6`, compare GitHub and local SHA-256 digests, mark alpha.5 as replaced, and install the macOS archive in Downloads.
+
+**Actual verification (2026-09-09):** Steps 1–5 are complete. The focused tests passed, launcher lint contained no visual-editor errors, and the actual `123` project linted without errors after 32 Auto events were migrated from `{nw}` plus `pause 2.8` to `{nw=2.8}`. A live run displayed each intro line in its dialogue frame through the configured interval and then entered the prologue. In the assembled editor, mouse focus, Select All, typing, event-row refresh, and exact Stage refresh worked from both the Inspector Text area and a click on the Stage frame. The temporary values never entered the script. Final package and release evidence will be recorded after Step 6.
+
 ## Plan Self-Review
 
 Baseline consistency: Task 1 uses the confirmed local RenPy `8.5.3.26051504` SDK as a read-only input, stores only the custom source overlay in Git, and replaces the original Windows-only `Test-Path` checks with cross-platform Python tests.

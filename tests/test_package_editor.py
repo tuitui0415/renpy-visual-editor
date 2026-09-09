@@ -37,7 +37,7 @@ class PackageEditorTests(unittest.TestCase):
                 manifest = json.loads(archive.read(next(name for name in names if name.endswith("BUILD-INFO.json"))))
                 self.assertTrue(any(name.endswith("renpy.exe") for name in names))
                 self.assertFalse(any("py3-mac-universal" in name for name in names))
-                self.assertEqual(manifest["editor_version"], "0.1.0-alpha.5")
+                self.assertEqual(manifest["editor_version"], "0.1.0-alpha.6")
                 self.assertEqual(manifest["source_commit"], "abc123")
             with zipfile.ZipFile(macos) as archive:
                 names = archive.namelist()

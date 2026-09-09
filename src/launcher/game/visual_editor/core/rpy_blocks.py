@@ -202,7 +202,11 @@ def _parse_managed_block(block: str, event_id: str) -> Event:
     prefix = _audio_statements(attachments)
     suffix = _visual_statements(attachments)
     if advance is not None:
-        suffix.extend(_advance_statements(AdvanceMode(advance["mode"]), advance.get("delay")))
+        advance_mode = AdvanceMode(advance["mode"])
+        advance_delay = advance.get("delay")
+        suffix.extend(_advance_statements(advance_mode, advance_delay))
+        if advance_mode == AdvanceMode.AUTO and advance_delay is not None:
+            suffix.append(f"pause {_format_number(advance_delay)}")
     statement = _strip_generated_statements(statement, prefix, suffix)
 
     event = _event_from_statement(statement, event_id, "\n".join(notes), block)
@@ -216,7 +220,12 @@ def _parse_managed_block(block: str, event_id: str) -> Event:
         event.advance = AdvanceMode(advance["mode"])
         event.advance_delay = advance.get("delay")
         if event.kind == EventKind.TEXT and event.advance == AdvanceMode.AUTO:
-            if event.text and event.text.endswith("{nw}"):
+            wait_suffix = None
+            if event.advance_delay is not None:
+                wait_suffix = f"{{nw={_format_number(event.advance_delay)}}}"
+            if wait_suffix and event.text and event.text.endswith(wait_suffix):
+                event.text = event.text[: -len(wait_suffix)]
+            elif event.text and event.text.endswith("{nw}"):
                 event.text = event.text[:-4]
     if choice is not None:
         event.choice_prompt = choice.get("prompt")
@@ -450,8 +459,11 @@ def _event_statement(event: Event) -> str:
     if event.kind == EventKind.TEXT:
         speaker = f"{event.speaker} " if event.speaker else ""
         text = event.text or ""
-        if event.advance == AdvanceMode.AUTO and not text.endswith("{nw}"):
-            text += "{nw}"
+        if event.advance == AdvanceMode.AUTO:
+            if event.advance_delay is not None:
+                text += f"{{nw={_format_number(event.advance_delay)}}}"
+            elif not text.endswith("{nw}"):
+                text += "{nw}"
         return speaker + json.dumps(text, ensure_ascii=False)
     if event.kind == EventKind.CONTROL and event.text:
         return event.text.strip()
@@ -501,7 +513,7 @@ def _visual_statements(attachments: List[Attachment]) -> List[str]:
 
 
 def _advance_statements(mode: AdvanceMode, delay: Optional[float]) -> List[str]:
-    if mode in (AdvanceMode.AUTO, AdvanceMode.VIDEO) and delay is not None:
+    if mode == AdvanceMode.VIDEO and delay is not None:
         return [f"pause {_format_number(delay)}"]
     return []
 

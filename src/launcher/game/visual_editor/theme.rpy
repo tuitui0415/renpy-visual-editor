@@ -41,6 +41,18 @@ style ve_error_badge is frame:
     background Solid("#8f2f36e6")
     padding (8, 6)
 
+style ve_input_button is button:
+    background Solid("#11151a")
+    hover_background Solid("#283443")
+    selected_background Solid("#243b55")
+    padding (7, 5)
+    xfill True
+
+style ve_input_text is input:
+    color "#ffffff"
+    caret Solid("#5ca9ff")
+    size 17
+
 style ve_attachment is frame:
     background Solid("#171b21")
     padding (8, 8)

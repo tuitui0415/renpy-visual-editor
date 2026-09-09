@@ -192,28 +192,28 @@ init python:
             )
         return (0, 0, VISUAL_EDITOR_STAGE_WIDTH, VISUAL_EDITOR_STAGE_HEIGHT)
 
-    class VisualEditorFieldInputValue(InputValue):
+    class VisualEditorFieldInputValue(FieldInputValue):
         def __init__(self, target, field):
-            self.target = target
-            self.field = field
+            super(VisualEditorFieldInputValue, self).__init__(target, field, default=False)
 
         def get_text(self):
-            return getattr(self.target, self.field) or ""
+            return getattr(self.object, self.field) or ""
 
         def set_text(self, value):
             visual_editor_checkpoint()
-            setattr(self.target, self.field, value)
+            setattr(self.object, self.field, value)
             visual_editor_document.dirty = True
             visual_editor_schedule_stage_render()
 
-    class VisualEditorNumericInputValue(InputValue):
+    class VisualEditorNumericInputValue(FieldInputValue):
+        equality_fields = FieldInputValue.equality_fields + ("integer",)
+
         def __init__(self, target, field, integer=False):
-            self.target = target
-            self.field = field
+            super(VisualEditorNumericInputValue, self).__init__(target, field, default=False)
             self.integer = integer
 
         def get_text(self):
-            value = getattr(self.target, self.field)
+            value = getattr(self.object, self.field)
             return str(value)
 
         def set_text(self, value):
@@ -222,18 +222,19 @@ init python:
             except ValueError:
                 return
             visual_editor_checkpoint()
-            setattr(self.target, self.field, number)
+            setattr(self.object, self.field, number)
             visual_editor_document.dirty = True
             visual_editor_schedule_stage_render()
 
-    class VisualEditorMappingInputValue(InputValue):
+    class VisualEditorMappingInputValue(DictInputValue):
+        equality_fields = DictInputValue.equality_fields + ("numeric",)
+
         def __init__(self, mapping, key, numeric=False):
-            self.mapping = mapping
-            self.key = key
+            super(VisualEditorMappingInputValue, self).__init__(mapping, key, default=False)
             self.numeric = numeric
 
         def get_text(self):
-            value = self.mapping.get(self.key, "")
+            value = self.dict.get(self.key, "")
             return str(value)
 
         def set_text(self, value):
@@ -243,13 +244,15 @@ init python:
                 except ValueError:
                     return
             visual_editor_checkpoint()
-            self.mapping[self.key] = value
+            self.dict[self.key] = value
             visual_editor_document.dirty = True
             visual_editor_schedule_stage_render()
 
-    class VisualEditorPreferenceInputValue(InputValue):
-        def get_text(self):
-            return persistent.visual_editor_external_editor or ""
+    class VisualEditorPreferenceInputValue(FieldInputValue):
+        def __init__(self):
+            super(VisualEditorPreferenceInputValue, self).__init__(
+                persistent, "visual_editor_external_editor", default=False
+            )
 
         def set_text(self, value):
             persistent.visual_editor_external_editor = value
