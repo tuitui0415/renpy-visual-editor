@@ -11,7 +11,11 @@ venv/
 .env
 .env.*
 !.env.example
+.worktrees/
+.runtime/
+.dist/
 log.txt
 traceback.txt
 errors.txt
+screenshot*.png
 saves/
