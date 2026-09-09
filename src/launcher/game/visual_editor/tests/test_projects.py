@@ -24,6 +24,13 @@ class ProjectCreationTests(unittest.TestCase):
             self.assertTrue((project / "game" / "assets" / asset_root).is_dir())
         self.assertTrue(is_visual_project(project))
 
+    def test_created_project_can_quit_without_full_gui_screens(self):
+        project = create_project(self.temp_dir, "salt_lake")
+
+        options = (project / "game" / "options.rpy").read_text(encoding="utf-8")
+        self.assertIn("define config.quit_action = Quit(confirm=False)", options)
+        self.assertIn("game/visual_editor_preview.rpy", (project / ".gitignore").read_text(encoding="utf-8"))
+
     def test_rejects_nonportable_project_names(self):
         for name in ("", "../outside", "con", "bad:name", "trailing."):
             with self.subTest(name=name):

@@ -166,4 +166,4 @@ git add game .gitignore
 git commit -m "story: add chapter 1"
 ```
 
-提交 `.rpy`、结构化备注和素材；不要提交存档、日志、编译缓存或 `.visual_editor_preview.rpy`。
+提交 `.rpy`、结构化备注和素材；不要提交存档、日志、编译缓存或 `visual_editor_preview.rpy`。

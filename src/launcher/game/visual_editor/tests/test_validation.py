@@ -65,7 +65,8 @@ class ValidationTests(unittest.TestCase):
         entry = create_preview_entry(self.project, "chapter_01.salt_lake")
 
         self.assertIn("jump chapter_01.salt_lake", entry.read_text(encoding="utf-8"))
-        self.assertEqual(preview_warp_spec(self.project), "game/.visual_editor_preview.rpy:2")
+        self.assertEqual(entry.name, "visual_editor_preview.rpy")
+        self.assertEqual(preview_warp_spec(self.project), "game/visual_editor_preview.rpy:2")
 
     def test_external_command_is_platform_specific(self):
         path = Path("story/chapter.rpy")

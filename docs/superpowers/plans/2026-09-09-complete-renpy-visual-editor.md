@@ -549,6 +549,33 @@ Run all repository and editor tests, assemble the pinned SDK, run RenPy lint, bu
 
 **Actual verification (2026-09-09):** The two new layout regression tests first failed because `core/layout.py` did not exist, then passed after the workspace correction. All seven repository tests and 46 editor-core tests passed, followed by RenPy 8.5.3 launcher lint. Both alpha.2 archives passed integrity, manifest, target-runtime isolation, generated-file exclusion, and architecture checks; the extracted macOS package reported the pinned RenPy build and completed launcher lint. GitHub prerelease `v0.1.0-alpha.2` was published from source commit `d59b45f`.
 
+## Task 12: Repair current-scene preview startup and minimal-project shutdown
+
+**Files:**
+- Modify: `src/launcher/game/visual_editor/core/preview.py`
+- Modify: `src/launcher/game/visual_editor/tests/test_validation.py`
+- Modify: `src/launcher/game/visual_editor/tests/test_projects.py`
+- Modify: `src/project_template/game/options.rpy`
+- Modify: `src/project_template/.gitignore`
+
+- [x] **Step 1: Reproduce both runtime failures**
+
+Closing a generated minimal project invoked RenPy's default confirmation action, but the project has no `yesno_prompt` screen. Current-scene preview wrote a dot-prefixed source file, which RenPy ignored while compiling, so `--warp game/.visual_editor_preview.rpy:2` had no matching statement.
+
+- [x] **Step 2: Add focused regression tests**
+
+Assert that generated projects configure an immediate quit action and that the temporary preview uses a normal compilable filename which is excluded from Git and distributions.
+
+- [x] **Step 3: Implement and verify the repair**
+
+Use `Quit(confirm=False)` in the minimal project template and rename the temporary entry to `game/visual_editor_preview.rpy`. Verify the Python regression tests, RenPy lint, and an actual current-scene launch against the imported intro project.
+
+- [ ] **Step 4: Publish alpha.3**
+
+Build both platform archives from the repair commit, verify their manifests and platform runtimes, and publish `0.1.0-alpha.3` as a GitHub prerelease. Windows UI remains subject to the Windows target rows in the acceptance matrix.
+
+**Actual verification (2026-09-09):** The two focused tests first failed on the old quit configuration and dot-prefixed preview filename, then passed after the repair. All 47 editor-core tests and seven repository tests passed. RenPy 8.5.3 lint completed for the assembled launcher and the imported 180-dialogue project. A real `--warp game/visual_editor_preview.rpy:2` launch entered the intro and remained running past its first timed pause without a traceback.
+
 ## Plan Self-Review
 
 Baseline consistency: Task 1 uses the confirmed local RenPy `8.5.3.26051504` SDK as a read-only input, stores only the custom source overlay in Git, and replaces the original Windows-only `Test-Path` checks with cross-platform Python tests.

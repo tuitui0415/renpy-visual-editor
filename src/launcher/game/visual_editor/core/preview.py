@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List, Optional
 
 
-PREVIEW_FILENAME = ".visual_editor_preview.rpy"
+PREVIEW_FILENAME = "visual_editor_preview.rpy"
 LABEL_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_.]*$")
 
 
