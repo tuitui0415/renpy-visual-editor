@@ -1,0 +1,16 @@
+{
+  "version": "8.5.3",
+  "build": "8.5.3.26051504",
+  "required_paths": [
+    "renpy.py",
+    "renpy.sh",
+    "renpy.exe",
+    "renpy.app",
+    "renpy/vc_version.py",
+    "launcher/game/project.rpy",
+    "launcher/game/new_project.rpy",
+    "launcher/game/front_page.rpy",
+    "lib/py3-mac-universal",
+    "lib/py3-windows-x86_64"
+  ]
+}

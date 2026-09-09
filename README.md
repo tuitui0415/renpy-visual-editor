@@ -18,9 +18,19 @@
 
 这三个 Markdown 文件是持续维护的项目文档。后续实现必须以它们为约束；需求、架构、任务状态或验证结果发生变化时，在同一次提交中直接更新对应文档。实施计划中的预期结果在实际执行前不视为实测结果。
 
+## 建立开发工作副本
+
+本机已安装的 Ren'Py SDK 仅作为只读输入。以下命令验证精确版本，将 SDK 复制到 `.runtime/`，然后应用仓库中 `src/` 的自定义源码：
+
+```sh
+python3 scripts/bootstrap_sdk.py --sdk-dir /Applications/renpy-8.5.3-sdk
+./.runtime/renpy-8.5.3-sdk/renpy.sh --version
+```
+
+Windows 使用 `py -3` 运行同一脚本。详细规则见 [Ren'Py 上游基线](docs/upstream-renpy.md)。
+
 ## 已知开发事项
 
-- 建立从原 SDK 生成工作副本并应用源码覆盖层的跨平台脚本。
 - macOS 可在当前设备验证；Windows 发布包仍需在 Windows 真机执行验收矩阵。
 
 ## 本地版本管理

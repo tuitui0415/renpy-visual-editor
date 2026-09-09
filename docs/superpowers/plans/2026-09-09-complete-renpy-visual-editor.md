@@ -25,6 +25,7 @@
 - Every editable scene, event, attachment, choice, and interaction node has a persisted note.
 - Never rewrite source the parser does not fully understand; preserve it as a code block with an external-editor action.
 - Write tests with `unittest.TestCase`; test snippets below are methods of a test case, and tests needing a temporary path create `self.temp_dir` in `setUp` with `tempfile.TemporaryDirectory`.
+- Commands use `python3` on macOS and Linux; use `py -3` for the same commands on Windows.
 
 ---
 
@@ -61,33 +62,35 @@
 - Consumes: `--sdk-dir` or `RENPY_SDK_DIR` pointing to a RenPy SDK.
 - Produces: a validated working copy at `.runtime/renpy-8.5.3-sdk` with the repository's `src/` overlay applied.
 
-- [ ] **Step 1: Write failing SDK validation and assembly tests**
+- [x] **Step 1: Write failing SDK validation and assembly tests**
 
-Use temporary minimal SDK fixtures. Test rejection of a wrong version or missing launcher file, successful copy of required files, exclusion of `tmp`, logs, screenshots, bytecode and saves, application of the `src/` overlay, and preservation of the source SDK.
+Use temporary minimal SDK fixtures. Test rejection of a wrong version or missing launcher file, successful copy of required files, exclusion of `tmp`, logs, screenshots and generated cache directories, preservation of SDK-shipped runtime bytecode, application of the `src/` overlay, and preservation of the source SDK.
 
-- [ ] **Step 2: Run tests to confirm failure**
+- [x] **Step 2: Run tests to confirm failure**
 
-Run: `python -m unittest tests.test_bootstrap_sdk -v`
+Run: `python3 -m unittest tests.test_bootstrap_sdk -v`
 
 Expected: import failure because `scripts/bootstrap_sdk.py` does not exist.
 
-- [ ] **Step 3: Implement the SDK lock and bootstrap script**
+- [x] **Step 3: Implement the SDK lock and bootstrap script**
 
-Lock RenPy `8.5.3.26051504` and require `renpy.py`, `renpy.sh`, `renpy.exe`, `renpy.app`, `launcher/game/project.rpy`, `launcher/game/new_project.rpy`, and `launcher/game/front_page.rpy`. Resolve the SDK from `--sdk-dir`, then `RENPY_SDK_DIR`, then the macOS default `/Applications/renpy-8.5.3-sdk`. Copy it to `.runtime/renpy-8.5.3-sdk` without modifying the source, exclude user and generated data, then overlay `src/`. Ignore `.runtime/`, `.dist/`, caches, logs, screenshots, saves, and bytecode without ignoring source `.rpy` files. Document licensing and the requirement that developers obtain RenPy 8.5.3 separately.
+Lock RenPy `8.5.3.26051504` and require `renpy.py`, `renpy.sh`, `renpy.exe`, `renpy.app`, `launcher/game/project.rpy`, `launcher/game/new_project.rpy`, and `launcher/game/front_page.rpy`. Resolve the SDK from `--sdk-dir`, then `RENPY_SDK_DIR`, then the macOS default `/Applications/renpy-8.5.3-sdk`. Copy it to `.runtime/renpy-8.5.3-sdk` without modifying the source, exclude user data and generated cache directories, then overlay `src/`. Preserve SDK-shipped `.pyc`, `.rpyc`, and `.rpymc` runtime files. Ignore `.runtime/`, `.dist/`, caches, logs, screenshots, and saves without ignoring source `.rpy` files. Document licensing and the requirement that developers obtain RenPy 8.5.3 separately.
 
-- [ ] **Step 4: Verify the launcher baseline**
+- [x] **Step 4: Verify the launcher baseline**
 
-Run: `python -m unittest tests.test_bootstrap_sdk -v`
+Run: `python3 -m unittest tests.test_bootstrap_sdk -v`
 
 Expected: PASS.
 
-Run: `python scripts/bootstrap_sdk.py --sdk-dir /Applications/renpy-8.5.3-sdk`
+Run: `python3 scripts/bootstrap_sdk.py --sdk-dir /Applications/renpy-8.5.3-sdk`
 
 Expected: the exact version is accepted, required launcher and both platform runtimes exist in the generated working copy, and the installed SDK remains unchanged.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add renpy-sdk.lock.json scripts tests docs/upstream-renpy.md README.md .gitignore; git commit -m "chore: assemble pinned RenPy SDK baseline"`
+
+**Actual verification (2026-09-09):** Four bootstrap unit tests passed. The script assembled the local `8.5.3.26051504` SDK with both `py3-mac-universal` and `py3-windows-x86_64` runtimes, source-file hashes remained unchanged, and the generated `renpy.sh --version` command succeeded. An initial real-SDK run exposed that shipped `.pyc` files are runtime dependencies; the copy filter was corrected and covered by a regression assertion before this task was marked complete.
 
 ## Task 2: Define the editor domain model and portable resource scanner
 
@@ -120,7 +123,7 @@ def test_rejects_case_collision_and_windows_invalid_character(self):
 
 - [ ] **Step 2: Run the scanner tests to confirm failure**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_resources -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_resources -v`
 
 Expected: import failure because the core modules do not exist.
 
@@ -130,7 +133,7 @@ Implement string enums for `BACKGROUND`, `CHARACTER`, `CG`, `BGM`, `SFX`, `SCENE
 
 - [ ] **Step 4: Run the scanner tests to confirm success**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_resources -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_resources -v`
 
 Expected: PASS.
 
@@ -165,7 +168,7 @@ def test_create_project_creates_required_directories(self):
 
 - [ ] **Step 2: Run tests to confirm failure**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_projects -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_projects -v`
 
 Expected: FAIL because `create_project` is absent.
 
@@ -175,7 +178,7 @@ Copy the template, reject invalid project names, create all five asset roots, an
 
 - [ ] **Step 4: Run tests and launcher smoke check**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_projects -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_projects -v`
 
 Expected: PASS.
 
@@ -214,7 +217,7 @@ def test_unknown_source_is_a_read_only_code_event(self):
 
 - [ ] **Step 2: Run tests to confirm failure**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_rpy_blocks -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_rpy_blocks -v`
 
 Expected: FAIL because parser functions are missing.
 
@@ -224,7 +227,7 @@ Emit `# visual-editor: begin <node-id>` and `# visual-editor: end <node-id>` aro
 
 - [ ] **Step 4: Run parser tests to confirm success**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_rpy_blocks -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_rpy_blocks -v`
 
 Expected: PASS.
 
@@ -261,7 +264,7 @@ def test_delete_event_removes_only_selected_event(self):
 
 - [ ] **Step 2: Run tests to confirm failure**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_event_actions -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_event_actions -v`
 
 Expected: FAIL because editing actions do not exist.
 
@@ -271,7 +274,7 @@ Use a three-pane screen: project tree left, vertical event list and stage center
 
 - [ ] **Step 4: Run action tests and launch the launcher**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_event_actions -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_event_actions -v`
 
 Expected: PASS.
 
@@ -305,7 +308,7 @@ def test_character_assignment_rejects_background_asset(self):
 
 - [ ] **Step 2: Run tests to confirm failure**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_transforms -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_transforms -v`
 
 Expected: FAIL because transform conversion is absent.
 
@@ -315,7 +318,7 @@ Show only resources valid for the selected event kind. For characters, list comp
 
 - [ ] **Step 4: Run transform tests to confirm success**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_transforms -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_transforms -v`
 
 Expected: PASS.
 
@@ -348,7 +351,7 @@ def test_video_keep_last_frame_emits_non_looping_movie(self):
 
 - [ ] **Step 2: Run tests to confirm failure**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_emission -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_emission -v`
 
 Expected: FAIL because attachments are not emitted.
 
@@ -358,7 +361,7 @@ Support visual fade, move, zoom, filter, and screen-level flash/shake/blur. Supp
 
 - [ ] **Step 4: Run emission tests to confirm success**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_emission -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_emission -v`
 
 Expected: PASS.
 
@@ -391,7 +394,7 @@ def test_interaction_emits_call_and_keeps_note(self):
 
 - [ ] **Step 2: Run tests to confirm failure**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_branches -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_branches -v`
 
 Expected: FAIL because branch models are absent.
 
@@ -401,7 +404,7 @@ Display a compact node graph only for a selected choice event. Create, rename, c
 
 - [ ] **Step 4: Run branch tests to confirm success**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_branches -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_branches -v`
 
 Expected: PASS.
 
@@ -435,7 +438,7 @@ def test_preview_entry_jumps_to_requested_scene(self):
 
 - [ ] **Step 2: Run tests to confirm failure**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_validation -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_validation -v`
 
 Expected: FAIL because validation and preview modules are absent.
 
@@ -445,7 +448,7 @@ Validate missing assets, portable paths, duplicate labels, empty choices, unreso
 
 - [ ] **Step 4: Run validation tests and lint a sample project**
 
-Run: `python -m unittest src.launcher.game.visual_editor.tests.test_validation -v`
+Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_validation -v`
 
 Expected: PASS.
 
@@ -471,7 +474,7 @@ Create `docs/test-matrix.md` with rows for Windows mouse, Windows trackpad, macO
 
 - [ ] **Step 2: Run all Python tests and RenPy lint**
 
-Run: `python -m unittest discover -s src/launcher/game/visual_editor/tests -v`
+Run: `python3 -m unittest discover -s src/launcher/game/visual_editor/tests -v`
 
 Expected: PASS.
 
