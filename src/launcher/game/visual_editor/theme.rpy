@@ -26,3 +26,7 @@ style ve_selection is frame:
 style ve_handle is frame:
     background Solid("#5ca9ff")
     padding (0, 0)
+
+style ve_attachment is frame:
+    background Solid("#171b21")
+    padding (8, 8)

@@ -41,5 +41,7 @@ screen visual_editor_inspector():
                 for attachment in selected_event.attachments:
                     text _("Attachment: [attachment.kind]") style "ve_muted"
                     input value VisualEditorFieldInputValue(attachment, "note")
+
+                use visual_editor_attachments(selected_event)
         else:
             text _("Select an event to edit it.") style "ve_muted"

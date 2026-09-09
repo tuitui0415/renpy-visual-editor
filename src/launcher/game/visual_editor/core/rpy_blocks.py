@@ -5,9 +5,10 @@ from __future__ import annotations
 import ast
 import json
 import re
+import textwrap
 from typing import List, Optional, Tuple
 
-from .model import AdvanceMode, Event, EventKind, Scene
+from .model import AdvanceMode, Attachment, Event, EventKind, Scene
 
 
 LABEL_PATTERN = re.compile(
@@ -21,6 +22,12 @@ BEGIN_PATTERN = re.compile(
 NOTE_PATTERN = re.compile(r"^[ \t]*# visual-editor-note:(?: )?(?P<note>.*?)(?:\n|$)")
 TRANSFORM_PATTERN = re.compile(
     r"^[ \t]*# visual-editor-transform:(?: )?(?P<transform>.*?)(?:\n|$)"
+)
+ATTACHMENT_PATTERN = re.compile(
+    r"^[ \t]*# visual-editor-attachment:(?: )?(?P<attachment>.*?)(?:\n|$)"
+)
+ADVANCE_PATTERN = re.compile(
+    r"^[ \t]*# visual-editor-advance:(?: )?(?P<advance>.*?)(?:\n|$)"
 )
 QUOTED_STRING = r'"(?:\\.|[^"\\])*"'
 
@@ -39,6 +46,25 @@ def _event_from_statement(
     raw_source: Optional[str] = None,
 ) -> Event:
     statement = statement.strip()
+
+    movie_match = re.match(
+        rf'^show\s+expression\s+Movie\(play=({QUOTED_STRING}),\s*loop=False,\s*'
+        r'keep_last_frame=(?:True|False)\)\s+as\s+ve_[A-Za-z0-9_]+\s+'
+        r'zorder\s+-?[0-9]+:',
+        statement,
+    )
+    if movie_match:
+        return Event(event_id, EventKind.CG, asset=_decode_quoted(movie_match.group(1)), note=note)
+
+    atl_show_match = re.match(
+        rf'^show\s+expression\s+({QUOTED_STRING})\s+as\s+ve_[A-Za-z0-9_]+\s+'
+        r'zorder\s+-?[0-9]+:',
+        statement,
+    )
+    if atl_show_match:
+        asset = _decode_quoted(atl_show_match.group(1))
+        kind = EventKind.CG if asset.startswith("assets/cg/") else EventKind.CHARACTER
+        return Event(event_id, kind, asset=asset, note=note)
 
     match = re.fullmatch(rf"scene\s+expression\s+({QUOTED_STRING})", statement)
     if match:
@@ -123,6 +149,8 @@ def _event_from_statement(
 def _parse_managed_block(block: str, event_id: str) -> Event:
     notes = []
     transform = None
+    attachments = []
+    advance = None
     statement_lines = []
     for line in block.splitlines(keepends=True):
         note_match = NOTE_PATTERN.match(line)
@@ -132,15 +160,51 @@ def _parse_managed_block(block: str, event_id: str) -> Event:
         transform_match = TRANSFORM_PATTERN.match(line)
         if transform_match:
             transform = json.loads(transform_match.group("transform"))
+            continue
+        attachment_match = ATTACHMENT_PATTERN.match(line)
+        if attachment_match:
+            value = json.loads(attachment_match.group("attachment"))
+            attachments.append(
+                Attachment(value["kind"], value.get("note", ""), value.get("parameters", {}))
+            )
+            continue
+        advance_match = ADVANCE_PATTERN.match(line)
+        if advance_match:
+            advance = json.loads(advance_match.group("advance"))
         else:
             statement_lines.append(line)
-    event = _event_from_statement("".join(statement_lines), event_id, "\n".join(notes), block)
+
+    statement = textwrap.dedent("".join(statement_lines)).strip()
+    prefix = _audio_statements(attachments)
+    suffix = _visual_statements(attachments)
+    if advance is not None:
+        suffix.extend(_advance_statements(AdvanceMode(advance["mode"]), advance.get("delay")))
+    statement = _strip_generated_statements(statement, prefix, suffix)
+
+    event = _event_from_statement(statement, event_id, "\n".join(notes), block)
+    event.attachments = attachments
     if transform is not None:
         event.xalign = float(transform["xalign"])
         event.yalign = float(transform["yalign"])
         event.zoom = float(transform["zoom"])
         event.zorder = int(transform["zorder"])
+    if advance is not None:
+        event.advance = AdvanceMode(advance["mode"])
+        event.advance_delay = advance.get("delay")
+        if event.kind == EventKind.TEXT and event.advance == AdvanceMode.AUTO:
+            if event.text and event.text.endswith("{nw}"):
+                event.text = event.text[:-4]
     return event
+
+
+def _strip_generated_statements(statement: str, prefix: List[str], suffix: List[str]) -> str:
+    prefix_text = "\n".join(prefix)
+    suffix_text = "\n".join(suffix)
+    if prefix_text and statement.startswith(prefix_text + "\n"):
+        statement = statement[len(prefix_text) + 1 :]
+    if suffix_text and statement.endswith("\n" + suffix_text):
+        statement = statement[: -(len(suffix_text) + 1)]
+    return statement
 
 
 def _indent_width(line: str) -> int:
@@ -247,6 +311,51 @@ def parse_editor_blocks(text: str) -> List[Scene]:
     return scenes
 
 
+def _safe_tag(event_id: str) -> str:
+    return "ve_" + re.sub(r"[^A-Za-z0-9_]", "_", event_id)
+
+
+def _format_number(value: float) -> str:
+    return str(float(value))
+
+
+def _video_parameters(event: Event):
+    for attachment in event.attachments:
+        if attachment.kind == "video":
+            return attachment.parameters
+    return {}
+
+
+def _atl_statement(event: Event, expression: str) -> str:
+    lines = [
+        f"show expression {expression} as {_safe_tag(event.id)} zorder {event.zorder}:",
+        f"    xalign {_format_number(event.xalign)}",
+        f"    yalign {_format_number(event.yalign)}",
+        f"    zoom {_format_number(event.zoom)}",
+    ]
+    for attachment in event.attachments:
+        if attachment.kind != "visual":
+            continue
+        parameters = attachment.parameters
+        effect = parameters.get("effect")
+        duration = _format_number(parameters.get("duration", 0.5))
+        if effect == "move":
+            lines.append(
+                f"    linear {duration} xalign {_format_number(parameters.get('xalign', event.xalign))} "
+                f"yalign {_format_number(parameters.get('yalign', event.yalign))}"
+            )
+        elif effect == "zoom":
+            lines.append(f"    linear {duration} zoom {_format_number(parameters.get('zoom', event.zoom))}")
+        elif effect == "blur":
+            lines.append(f"    linear {duration} blur {_format_number(parameters.get('amount', 8.0))}")
+        elif effect == "filter":
+            lines.append(
+                f"    linear {duration} matrixcolor "
+                f"SaturationMatrix({_format_number(parameters.get('saturation', 0.0))})"
+            )
+    return "\n".join(lines)
+
+
 def _event_statement(event: Event) -> str:
     if event.kind == EventKind.BACKGROUND:
         if event.text and event.text.startswith("scene "):
@@ -255,15 +364,82 @@ def _event_statement(event: Event) -> str:
     if event.kind == EventKind.CHARACTER:
         if event.text and (event.text.startswith("show ") or event.text.startswith("hide ")):
             return event.text
-        return f"show expression {json.dumps(event.asset or '', ensure_ascii=False)}"
+        expression = json.dumps(event.asset or "", ensure_ascii=False)
+        if (event.xalign, event.yalign, event.zoom, event.zorder) != (0.5, 0.5, 1.0, 0) or any(
+            attachment.kind == "visual" for attachment in event.attachments
+        ):
+            return _atl_statement(event, expression)
+        return f"show expression {expression}"
     if event.kind == EventKind.CG:
-        return f"show expression {json.dumps(event.asset or '', ensure_ascii=False)}"
+        asset = json.dumps(event.asset or "", ensure_ascii=False)
+        if (event.asset or "").lower().endswith(".webm"):
+            keep_last_frame = bool(_video_parameters(event).get("keep_last_frame", False))
+            expression = (
+                f"Movie(play={asset}, loop=False, keep_last_frame={keep_last_frame})"
+            )
+            return _atl_statement(event, expression)
+        if (event.xalign, event.yalign, event.zoom, event.zorder) != (0.5, 0.5, 1.0, 0) or any(
+            attachment.kind == "visual" for attachment in event.attachments
+        ):
+            return _atl_statement(event, asset)
+        return f"show expression {asset}"
     if event.kind == EventKind.TEXT:
         speaker = f"{event.speaker} " if event.speaker else ""
-        return speaker + json.dumps(event.text or "", ensure_ascii=False)
+        text = event.text or ""
+        if event.advance == AdvanceMode.AUTO and not text.endswith("{nw}"):
+            text += "{nw}"
+        return speaker + json.dumps(text, ensure_ascii=False)
     if event.kind == EventKind.CONTROL and event.text:
         return event.text.strip()
     raise ValueError(f"Cannot emit editable event kind: {event.kind.value}")
+
+
+def _audio_statements(attachments: List[Attachment]) -> List[str]:
+    statements = []
+    channels = {"music": "music", "ambience": "audio", "sound": "sound"}
+    for attachment in attachments:
+        channel = channels.get(attachment.kind)
+        if channel is None:
+            continue
+        parameters = attachment.parameters
+        action = parameters.get("action", "play")
+        if action == "stop":
+            statement = f"stop {channel}"
+            if parameters.get("fadeout") is not None:
+                statement += f" fadeout {_format_number(parameters['fadeout'])}"
+        else:
+            statement = f"play {channel} {json.dumps(parameters.get('asset', ''), ensure_ascii=False)}"
+            if parameters.get("loop"):
+                statement += " loop"
+            if parameters.get("fadein") is not None:
+                statement += f" fadein {_format_number(parameters['fadein'])}"
+            if parameters.get("fadeout") is not None:
+                statement += f" fadeout {_format_number(parameters['fadeout'])}"
+        statements.append(statement)
+    return statements
+
+
+def _visual_statements(attachments: List[Attachment]) -> List[str]:
+    transitions = {
+        "dissolve": "dissolve",
+        "fade": "fade",
+        "shake": "hpunch",
+        "flash": "Fade(0.1, 0.0, 0.2, color=\"#fff\")",
+    }
+    statements = []
+    for attachment in attachments:
+        if attachment.kind != "visual":
+            continue
+        transition = transitions.get(attachment.parameters.get("effect"))
+        if transition:
+            statements.append(f"with {transition}")
+    return statements
+
+
+def _advance_statements(mode: AdvanceMode, delay: Optional[float]) -> List[str]:
+    if mode in (AdvanceMode.AUTO, AdvanceMode.VIDEO) and delay is not None:
+        return [f"pause {_format_number(delay)}"]
+    return []
 
 
 def _emit_managed_event(event: Event) -> str:
@@ -283,9 +459,33 @@ def _emit_managed_event(event: Event) -> str:
             + json.dumps(transform, ensure_ascii=False, separators=(",", ":"))
             + "\n"
         )
+    for attachment in event.attachments:
+        value = {
+            "kind": attachment.kind,
+            "note": attachment.note,
+            "parameters": attachment.parameters,
+        }
+        lines.append(
+            "    # visual-editor-attachment: "
+            + json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+            + "\n"
+        )
+    if event.advance != AdvanceMode.IMMEDIATE or event.advance_delay is not None:
+        value = {"mode": event.advance.value, "delay": event.advance_delay}
+        lines.append(
+            "    # visual-editor-advance: "
+            + json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+            + "\n"
+        )
+    for statement in _audio_statements(event.attachments):
+        lines.append(f"    {statement}\n")
     statement = _event_statement(event)
     for line in statement.splitlines() or [""]:
         lines.append(f"    {line}\n")
+    for statement in _visual_statements(event.attachments):
+        lines.append(f"    {statement}\n")
+    for statement in _advance_statements(event.advance, event.advance_delay):
+        lines.append(f"    {statement}\n")
     lines.append(f"    # visual-editor: end {event.id}\n")
     return "".join(lines)
 

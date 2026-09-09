@@ -21,7 +21,8 @@ screen visual_editor_event_list():
 
             if visual_editor_document.selected_scene:
                 for event in visual_editor_document.selected_scene.events:
-                    $ note_marker = "  • note" if event.note else ""
+                    $ has_note = event.note or any(attachment.note for attachment in event.attachments)
+                    $ note_marker = "  • note" if has_note else ""
                     textbutton "[VISUAL_EDITOR_KIND_NAMES[event.kind]]  [visual_editor_event_summary(event)]  · [VISUAL_EDITOR_ADVANCE_NAMES[event.advance]][note_marker]":
                         action Function(visual_editor_select_event, event.id)
                         selected (event.id == visual_editor_document.selected_event_id)

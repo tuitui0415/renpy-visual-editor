@@ -77,6 +77,7 @@ class Event:
     text: Optional[str] = None
     speaker: Optional[str] = None
     advance: AdvanceMode = AdvanceMode.IMMEDIATE
+    advance_delay: Optional[float] = None
     note: str = ""
     attachments: List[Attachment] = field(default_factory=list)
     editable: bool = True

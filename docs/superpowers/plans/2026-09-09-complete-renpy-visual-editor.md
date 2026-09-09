@@ -350,7 +350,7 @@ Run: `git add src/launcher/game/visual_editor; git commit -m "feat: add stage in
 - Consumes: `Attachment` kinds `visual` and `audio`.
 - Produces: emitted `with`, ATL transform, `play music`, `play sound`, `Movie`, and pause statements.
 
-- [ ] **Step 1: Write failing emission tests**
+- [x] **Step 1: Write failing emission tests**
 
 ```python
 def test_emits_music_attachment_with_fade(self):
@@ -362,25 +362,27 @@ def test_video_keep_last_frame_emits_non_looping_movie(self):
     assert "keep_last_frame=True" in text
 ```
 
-- [ ] **Step 2: Run tests to confirm failure**
+- [x] **Step 2: Run tests to confirm failure**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_emission -v`
 
 Expected: FAIL because attachments are not emitted.
 
-- [ ] **Step 3: Implement attachments and advance modes**
+- [x] **Step 3: Implement attachments and advance modes**
 
 Support visual fade, move, zoom, filter, and screen-level flash/shake/blur. Support BGM, ambience, and SFX with loop/stop/fade controls. Support WebM video as full-screen cutscene or positioned displayable, with restore, transparent end, or last-frame behavior. Emit click waits as dialogue or `pause`, timed waits as numeric `pause`, and label explicit modes in the event list.
 
-- [ ] **Step 4: Run emission tests to confirm success**
+- [x] **Step 4: Run emission tests to confirm success**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_emission -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add src/launcher/game/visual_editor; git commit -m "feat: support audiovisual event attachments"`
+
+**Actual verification (2026-09-09):** Six emission tests first failed on absent audio, video, ATL, and timed-advance output, then passed after implementation. Attachments and advance metadata survive parse/emit round trips. The full suite through Task 7 passed 39 tests. Separate RenPy 8.5.3 lint runs passed for the assembled launcher and a generated project containing BGM, SFX, ambience stop, positioned non-looping WebM, no-wait timed text, ATL move, zoom, blur, saturation filter, dissolve, fade, shake, and flash statements.
 
 ## Task 8: Implement branches, interactive-module insertion, and native state hooks
 
