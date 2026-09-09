@@ -387,6 +387,7 @@ Run: `git add src/launcher/game/visual_editor; git commit -m "feat: support audi
 ## Task 8: Implement branches, interactive-module insertion, and native state hooks
 
 **Files:**
+- Create: `src/launcher/game/visual_editor/core/branches.py`
 - Create: `src/launcher/game/visual_editor/screens/branches.rpy`
 - Create: `src/project_template/game/code/runtime_helpers.rpy`
 - Create: `src/launcher/game/visual_editor/tests/test_branches.py`
@@ -395,7 +396,7 @@ Run: `git add src/launcher/game/visual_editor; git commit -m "feat: support audi
 **Interfaces:**
 - Produces: `ChoiceOption`, `InteractionTarget`, `emit_menu(event) -> str`, `emit_interaction_call(event) -> str`, and `discover_module_labels(code_dir: Path) -> list[str]`.
 
-- [ ] **Step 1: Write failing branch tests**
+- [x] **Step 1: Write failing branch tests**
 
 ```python
 def test_choice_emits_standard_menu_and_targets(self):
@@ -407,25 +408,27 @@ def test_interaction_emits_call_and_keeps_note(self):
     assert 'call gameplay_search_deck' in text
 ```
 
-- [ ] **Step 2: Run tests to confirm failure**
+- [x] **Step 2: Run tests to confirm failure**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_branches -v`
 
 Expected: FAIL because branch models are absent.
 
-- [ ] **Step 3: Implement branch view and module insertion**
+- [x] **Step 3: Implement branch view and module insertion**
 
 Display a compact node graph only for a selected choice event. Create, rename, connect, and delete choices; validate every target. Scan `game/code` for labels prefixed `gameplay_`, offer them in the Interaction Inspector, and emit a native `call`. Keep save/load/rollback native; template helpers document that gameplay state must use serializable RenPy store values and persistent progress uses `persistent`.
 
-- [ ] **Step 4: Run branch tests to confirm success**
+- [x] **Step 4: Run branch tests to confirm success**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_branches -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add src; git commit -m "feat: add choices and interaction insertion"`
+
+**Actual verification (2026-09-09):** The branch test module first failed because `core/branches.py` did not exist, then all five branch tests passed. They cover standard menu targets, interaction calls and notes, stable `gameplay_` discovery, option mutation, and structured choice round trips. The full suite through Task 8 passed 44 tests. RenPy 8.5.3 lint passed for the assembled launcher, the updated project template with native store and persistent helpers, and a generated Chinese menu that jumps to two labels and calls `gameplay_example`.
 
 ## Task 9: Add validation, current-scene preview, external editing, and cross-platform controls
 

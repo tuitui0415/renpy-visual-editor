@@ -30,3 +30,7 @@ style ve_handle is frame:
 style ve_attachment is frame:
     background Solid("#171b21")
     padding (8, 8)
+
+style ve_branch_graph is frame:
+    background Solid("#171b21")
+    padding (8, 8)

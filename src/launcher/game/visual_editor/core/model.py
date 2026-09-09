@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import PurePosixPath
@@ -63,6 +64,20 @@ class Transform:
 
 
 @dataclass
+class ChoiceOption:
+    text: str
+    target: str
+    note: str = ""
+    id: str = field(default_factory=lambda: uuid.uuid4().hex)
+
+
+@dataclass
+class InteractionTarget:
+    label: str
+    note: str = ""
+
+
+@dataclass
 class Attachment:
     kind: str
     note: str = ""
@@ -80,6 +95,9 @@ class Event:
     advance_delay: Optional[float] = None
     note: str = ""
     attachments: List[Attachment] = field(default_factory=list)
+    choice_prompt: Optional[str] = None
+    choices: List[ChoiceOption] = field(default_factory=list)
+    interaction: Optional[InteractionTarget] = None
     editable: bool = True
     xalign: float = 0.5
     yalign: float = 0.5

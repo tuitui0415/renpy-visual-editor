@@ -43,5 +43,6 @@ screen visual_editor_inspector():
                     input value VisualEditorFieldInputValue(attachment, "note")
 
                 use visual_editor_attachments(selected_event)
+                use visual_editor_branches(selected_event)
         else:
             text _("Select an event to edit it.") style "ve_muted"

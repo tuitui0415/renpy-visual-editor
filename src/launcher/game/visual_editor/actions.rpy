@@ -1,15 +1,26 @@
 default visual_editor_document = None
 default visual_editor_resources = []
+default visual_editor_module_labels = []
 
 init python:
     from pathlib import Path
 
+    from visual_editor.core.branches import add_choice as visual_editor_add_choice_core
+    from visual_editor.core.branches import delete_choice as visual_editor_delete_choice_core
+    from visual_editor.core.branches import discover_module_labels
     from visual_editor.core.editing import delete_event as visual_editor_delete_core
     from visual_editor.core.editing import insert_event as visual_editor_insert_core
     from visual_editor.core.editing import load_workspace as visual_editor_load_core
     from visual_editor.core.editing import move_event as visual_editor_move_core
     from visual_editor.core.editing import save_workspace as visual_editor_save_core
-    from visual_editor.core.model import AdvanceMode, Attachment, EventKind, ResourceKind
+    from visual_editor.core.model import (
+        AdvanceMode,
+        Attachment,
+        ChoiceOption,
+        EventKind,
+        InteractionTarget,
+        ResourceKind,
+    )
     from visual_editor.core.resources import scan_assets as visual_editor_scan_assets
     from visual_editor.core.transforms import assign_resource as visual_editor_assign_resource_core
     from visual_editor.core.transforms import canvas_to_transform as visual_editor_canvas_to_transform
@@ -89,9 +100,10 @@ init python:
             visual_editor_document.dirty = True
 
     def visual_editor_open_project(project_path):
-        global visual_editor_document, visual_editor_resources
+        global visual_editor_document, visual_editor_resources, visual_editor_module_labels
         visual_editor_document = visual_editor_load_core(project_path)
         visual_editor_resources = visual_editor_scan_assets(Path(project_path) / "game")
+        visual_editor_module_labels = discover_module_labels(Path(project_path) / "game" / "code")
 
     def visual_editor_select_scene(index):
         visual_editor_document.selected_scene_index = index
@@ -126,9 +138,13 @@ init python:
         elif preset == "pause":
             event.text = "pause"
         elif preset == "choice":
-            event.text = 'menu:\n        "Continue":\n            pass'
+            event.choice_prompt = _("What happens next?")
+            event.choices = [ChoiceOption(_("Continue"), scene.label)]
+            event.advance = AdvanceMode.CHOICE
         elif preset == "interaction":
-            event.text = "call gameplay_module"
+            target = visual_editor_module_labels[0] if visual_editor_module_labels else "gameplay_module"
+            event.interaction = InteractionTarget(target)
+            event.advance = AdvanceMode.INTERACTION
         elif preset == "code":
             event.text = "    # Edit custom code in an external editor.\n"
             event.editable = False
@@ -315,7 +331,38 @@ init python:
         visual_editor_document.dirty = True
         renpy.restart_interaction()
 
+    def visual_editor_add_choice():
+        event = visual_editor_document.selected_event
+        scene = visual_editor_document.selected_scene
+        if event is None or scene is None:
+            return
+        visual_editor_add_choice_core(event, _("New option"), scene.label)
+        event.advance = AdvanceMode.CHOICE
+        visual_editor_document.dirty = True
+        renpy.restart_interaction()
+
+    def visual_editor_delete_choice(option_id):
+        event = visual_editor_document.selected_event
+        if event is None:
+            return
+        visual_editor_delete_choice_core(event, option_id)
+        visual_editor_document.dirty = True
+        renpy.restart_interaction()
+
+    def visual_editor_set_interaction(label):
+        event = visual_editor_document.selected_event
+        if event is None:
+            return
+        event.interaction = InteractionTarget(label, event.interaction.note if event.interaction else "")
+        event.advance = AdvanceMode.INTERACTION
+        visual_editor_document.dirty = True
+        renpy.restart_interaction()
+
     def visual_editor_event_summary(event):
+        if event.choices:
+            return event.choice_prompt or _("Choice")
+        if event.interaction:
+            return event.interaction.label
         if event.kind == EventKind.TEXT:
             return event.text or _("Empty text")
         if event.asset:

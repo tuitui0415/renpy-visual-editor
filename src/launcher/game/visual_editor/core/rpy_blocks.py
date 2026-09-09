@@ -8,7 +8,15 @@ import re
 import textwrap
 from typing import List, Optional, Tuple
 
-from .model import AdvanceMode, Attachment, Event, EventKind, Scene
+from .model import (
+    AdvanceMode,
+    Attachment,
+    ChoiceOption,
+    Event,
+    EventKind,
+    InteractionTarget,
+    Scene,
+)
 
 
 LABEL_PATTERN = re.compile(
@@ -28,6 +36,12 @@ ATTACHMENT_PATTERN = re.compile(
 )
 ADVANCE_PATTERN = re.compile(
     r"^[ \t]*# visual-editor-advance:(?: )?(?P<advance>.*?)(?:\n|$)"
+)
+CHOICE_PATTERN = re.compile(
+    r"^[ \t]*# visual-editor-choice:(?: )?(?P<choice>.*?)(?:\n|$)"
+)
+INTERACTION_PATTERN = re.compile(
+    r"^[ \t]*# visual-editor-interaction:(?: )?(?P<interaction>.*?)(?:\n|$)"
 )
 QUOTED_STRING = r'"(?:\\.|[^"\\])*"'
 
@@ -151,6 +165,8 @@ def _parse_managed_block(block: str, event_id: str) -> Event:
     transform = None
     attachments = []
     advance = None
+    choice = None
+    interaction = None
     statement_lines = []
     for line in block.splitlines(keepends=True):
         note_match = NOTE_PATTERN.match(line)
@@ -171,8 +187,16 @@ def _parse_managed_block(block: str, event_id: str) -> Event:
         advance_match = ADVANCE_PATTERN.match(line)
         if advance_match:
             advance = json.loads(advance_match.group("advance"))
-        else:
-            statement_lines.append(line)
+            continue
+        choice_match = CHOICE_PATTERN.match(line)
+        if choice_match:
+            choice = json.loads(choice_match.group("choice"))
+            continue
+        interaction_match = INTERACTION_PATTERN.match(line)
+        if interaction_match:
+            interaction = json.loads(interaction_match.group("interaction"))
+            continue
+        statement_lines.append(line)
 
     statement = textwrap.dedent("".join(statement_lines)).strip()
     prefix = _audio_statements(attachments)
@@ -194,6 +218,22 @@ def _parse_managed_block(block: str, event_id: str) -> Event:
         if event.kind == EventKind.TEXT and event.advance == AdvanceMode.AUTO:
             if event.text and event.text.endswith("{nw}"):
                 event.text = event.text[:-4]
+    if choice is not None:
+        event.choice_prompt = choice.get("prompt")
+        event.choices = [
+            ChoiceOption(
+                option["text"],
+                option["target"],
+                option.get("note", ""),
+                option["id"],
+            )
+            for option in choice.get("options", [])
+        ]
+    if interaction is not None:
+        event.interaction = InteractionTarget(
+            interaction["label"],
+            interaction.get("note", ""),
+        )
     return event
 
 
@@ -356,7 +396,31 @@ def _atl_statement(event: Event, expression: str) -> str:
     return "\n".join(lines)
 
 
+def emit_menu(event: Event) -> str:
+    """Emit a structured choice as a standard Ren'Py menu."""
+
+    lines = ["menu:"]
+    if event.choice_prompt:
+        lines.append(f"    {json.dumps(event.choice_prompt, ensure_ascii=False)}")
+    for option in event.choices:
+        lines.append(f"    {json.dumps(option.text, ensure_ascii=False)}:")
+        lines.append(f"        jump {option.target}")
+    return "\n".join(lines)
+
+
+def emit_interaction_call(event: Event) -> str:
+    """Emit a native call to the selected gameplay module."""
+
+    if event.interaction is None:
+        raise ValueError("Interaction event has no target")
+    return f"call {event.interaction.label}"
+
+
 def _event_statement(event: Event) -> str:
+    if event.choices:
+        return emit_menu(event)
+    if event.interaction is not None:
+        return emit_interaction_call(event)
     if event.kind == EventKind.BACKGROUND:
         if event.text and event.text.startswith("scene "):
             return event.text
@@ -475,6 +539,31 @@ def _emit_managed_event(event: Event) -> str:
         lines.append(
             "    # visual-editor-advance: "
             + json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+            + "\n"
+        )
+    if event.choices:
+        value = {
+            "prompt": event.choice_prompt,
+            "options": [
+                {
+                    "id": option.id,
+                    "text": option.text,
+                    "target": option.target,
+                    "note": option.note,
+                }
+                for option in event.choices
+            ],
+        }
+        lines.append(
+            "    # visual-editor-choice: "
+            + json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+            + "\n"
+        )
+    if event.interaction is not None:
+        value = {"label": event.interaction.label, "note": event.interaction.note}
+        lines.append(
+            "    # visual-editor-interaction: "
+            + json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
             + "\n"
         )
     for statement in _audio_statements(event.attachments):
