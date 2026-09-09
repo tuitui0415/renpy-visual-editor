@@ -1,4 +1,5 @@
 game/visual_editor_preview.rpy
+game/visual_editor_stage_render.rpy
 game/*.rpyc
 game/**/*.rpyc
 game/saves/
