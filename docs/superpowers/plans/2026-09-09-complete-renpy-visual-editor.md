@@ -201,7 +201,7 @@ Run: `git add src; git commit -m "feat: create visual editor projects from templ
 - Consumes: `Scene`, `Event`, `Attachment`, and `AdvanceMode`.
 - Produces: `parse_editor_blocks(text: str) -> list[Scene]`, `emit_scene(scene: Scene) -> str`, `replace_editor_block(text: str, scene: Scene) -> str`.
 
-- [ ] **Step 1: Write failing round-trip tests**
+- [x] **Step 1: Write failing round-trip tests**
 
 ```python
 def test_event_round_trip_keeps_note_and_click_dialogue(self):
@@ -220,25 +220,27 @@ def test_unknown_source_is_a_read_only_code_event(self):
     assert parsed[0].events[0].editable is False
 ```
 
-- [ ] **Step 2: Run tests to confirm failure**
+- [x] **Step 2: Run tests to confirm failure**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_rpy_blocks -v`
 
 Expected: FAIL because parser functions are missing.
 
-- [ ] **Step 3: Implement marked blocks and safe fallback**
+- [x] **Step 3: Implement marked blocks and safe fallback**
 
 Emit `# visual-editor: begin <node-id>` and `# visual-editor: end <node-id>` around each editor-owned event, plus `# visual-editor-note:` comment lines. Parse only supported `scene`, `show`, `hide`, `play`, dialogue, `pause`, `menu`, `jump`, and `call` forms. Convert every other statement block into a non-editable `CODE` event and preserve its exact text.
 
-- [ ] **Step 4: Run parser tests to confirm success**
+- [x] **Step 4: Run parser tests to confirm success**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_rpy_blocks -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add src/launcher/game/visual_editor; git commit -m "feat: map visual events to RenPy script blocks"`
+
+**Actual verification (2026-09-09):** Seven parser/emitter tests passed. They cover marked-event round trips, notes, click dialogue, character speakers, standard scene/show/hide syntax, supported unmarked statements, preservation of other labels and Python blocks, and safe fallback for dynamic expressions. A generated scene containing a background path, structured note, and Chinese dialogue completed RenPy lint without script errors.
 
 ## Task 5: Build the minimal editor workspace and event-list editing actions
 

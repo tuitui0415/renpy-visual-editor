@@ -67,6 +67,7 @@ class Event:
     kind: EventKind
     asset: Optional[str] = None
     text: Optional[str] = None
+    speaker: Optional[str] = None
     advance: AdvanceMode = AdvanceMode.IMMEDIATE
     note: str = ""
     attachments: List[Attachment] = field(default_factory=list)
