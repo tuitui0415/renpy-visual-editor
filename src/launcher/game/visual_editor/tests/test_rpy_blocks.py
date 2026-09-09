@@ -65,7 +65,21 @@ class RpyBlockTests(unittest.TestCase):
         scene = parse_editor_blocks(source)[0]
 
         self.assertEqual(scene.events[0].speaker, "eileen")
+        self.assertTrue(scene.events[0].speaker_is_expression)
         self.assertIn('    eileen "你好。"\n', emit_scene(scene))
+
+    def test_typed_speaker_is_a_display_name_and_round_trips(self):
+        scene = Scene(
+            "x",
+            [Event("line", EventKind.TEXT, text="你好。", speaker="安")],
+        )
+
+        emitted = emit_scene(scene)
+        parsed = parse_editor_blocks(emitted)[0].events[0]
+
+        self.assertIn('Character("安") "你好。"', emitted)
+        self.assertEqual(parsed.speaker, "安")
+        self.assertFalse(parsed.speaker_is_expression)
 
     def test_unrecognized_expression_falls_back_to_read_only_code(self):
         source = "label x:\n    show expression dynamic_displayable()\n"

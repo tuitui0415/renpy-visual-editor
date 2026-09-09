@@ -103,6 +103,7 @@ class Event:
     yalign: float = 0.5
     zoom: float = 1.0
     zorder: int = 0
+    speaker_is_expression: bool = False
 
 
 @dataclass

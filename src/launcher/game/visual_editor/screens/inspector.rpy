@@ -22,7 +22,7 @@ screen visual_editor_inspector(panel_width=300):
 
                 if selected_event.kind == EventKind.TEXT:
                     text _("Speaker")
-                    use visual_editor_editable_input(VisualEditorFieldInputValue(selected_event, "speaker"))
+                    use visual_editor_editable_input(VisualEditorSpeakerInputValue(selected_event))
                     text _("Text")
                     use visual_editor_editable_input(VisualEditorFieldInputValue(selected_event, "text"), multiline=True)
 

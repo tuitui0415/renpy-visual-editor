@@ -65,9 +65,18 @@ class LauncherLayoutTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn("class VisualEditorFieldInputValue(FieldInputValue)", actions)
+        self.assertIn("class VisualEditorSpeakerInputValue(VisualEditorFieldInputValue)", actions)
+        self.assertIn("self.object.speaker_is_expression = False", actions)
         self.assertIn("action input_value.Enable()", input_screen)
+        self.assertIn("VisualEditorSpeakerInputValue(selected_event)", inspector)
         self.assertIn("use visual_editor_editable_input", inspector)
         self.assertNotIn("input value VisualEditorFieldInputValue", inspector)
+
+        theme = (
+            PROJECT_ROOT / "src/launcher/game/visual_editor/theme.rpy"
+        ).read_text(encoding="utf-8")
+        self.assertIn('caret Solid("#5ca9ff", xsize=2)', theme)
+        self.assertIn('selected_background Solid("#11151a")', theme)
 
     def test_text_preview_can_focus_the_inspector_text_field(self):
         stage = (

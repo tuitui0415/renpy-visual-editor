@@ -145,7 +145,7 @@ class ExactStageRenderTests(unittest.TestCase):
                         xalign=0.75,
                         yalign=0.5,
                     ),
-                    Event("line", EventKind.TEXT, text="中文对话测试"),
+                    Event("line", EventKind.TEXT, text="中文对话测试", speaker="安"),
                 ],
             )
             pythonw = SDK / "lib/py3-mac-universal/pythonw"

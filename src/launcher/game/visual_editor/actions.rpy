@@ -205,6 +205,17 @@ init python:
             visual_editor_document.dirty = True
             visual_editor_schedule_stage_render()
 
+    class VisualEditorSpeakerInputValue(VisualEditorFieldInputValue):
+        def __init__(self, target):
+            super(VisualEditorSpeakerInputValue, self).__init__(target, "speaker")
+
+        def set_text(self, value):
+            visual_editor_checkpoint()
+            self.object.speaker = value
+            self.object.speaker_is_expression = False
+            visual_editor_document.dirty = True
+            visual_editor_schedule_stage_render()
+
     class VisualEditorNumericInputValue(FieldInputValue):
         equality_fields = FieldInputValue.equality_fields + ("integer",)
 

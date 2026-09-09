@@ -12,7 +12,13 @@ class StageRenderSourceTests(unittest.TestCase):
                 Event("bg", EventKind.BACKGROUND, asset="assets/backgrounds/room.png"),
                 Event("old", EventKind.TEXT, text="旧台词"),
                 Event("hero", EventKind.CHARACTER, asset="assets/characters/hero.png"),
-                Event("now", EventKind.TEXT, text="当前台词", speaker="e"),
+                Event(
+                    "now",
+                    EventKind.TEXT,
+                    text="当前台词",
+                    speaker="e",
+                    speaker_is_expression=True,
+                ),
             ],
         )
 
@@ -23,6 +29,16 @@ class StageRenderSourceTests(unittest.TestCase):
         self.assertIn('e "当前台词"', result.source)
         self.assertNotIn("旧台词", result.source)
         self.assertIsNone(result.blocked_reason)
+
+    def test_display_name_speaker_is_safe_in_stage_source(self):
+        scene = Scene(
+            "chapter",
+            [Event("now", EventKind.TEXT, text="当前台词", speaker="安")],
+        )
+
+        result = build_stage_render_source(scene, "now")
+
+        self.assertIn('Character("安") "当前台词"', result.source)
 
     def test_code_selection_reports_static_render_reason(self):
         scene = Scene(

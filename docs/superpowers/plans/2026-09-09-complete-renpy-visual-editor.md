@@ -1006,11 +1006,15 @@ Back up `/Users/yunhanwei/Desktop/天狼星/123/game/story/00_intro.rpy`, migrat
 
 Open the actual project in the assembled editor, select a Text event, click the Inspector Text area, replace it with a temporary test value, and verify the Inspector, event row, and Stage all update. Reload the project without saving so the temporary value does not enter the script.
 
+- [x] **Step 5a: Treat typed Speaker text as a display name**
+
+Reproduce the `Sayer '安' is not defined` Stage failure. Add a source-level distinction between imported RenPy speaker expressions and display names typed in Inspector. Emit typed names as `Character("名字")`, preserve imported `e "台词"` expressions, and verify both representations round-trip. Limit the caret to two pixels and keep the focused input background dark.
+
 - [ ] **Step 6: Complete validation and publish alpha.6**
 
 Run both full Python suites and launcher/project lint. Build Windows x86_64 and macOS universal archives from one source commit, verify their manifests and binaries, publish `v0.1.0-alpha.6`, compare GitHub and local SHA-256 digests, mark alpha.5 as replaced, and install the macOS archive in Downloads.
 
-**Actual verification (2026-09-09):** Steps 1–5 are complete. The focused tests passed, launcher lint contained no visual-editor errors, and the actual `123` project linted without errors after 32 Auto events were migrated from `{nw}` plus `pause 2.8` to `{nw=2.8}`. A live run displayed each intro line in its dialogue frame through the configured interval and then entered the prologue. In the assembled editor, mouse focus, Select All, typing, event-row refresh, and exact Stage refresh worked from both the Inspector Text area and a click on the Stage frame. The temporary values never entered the script. Final package and release evidence will be recorded after Step 6.
+**Actual verification (2026-09-09):** Steps 1–5a are complete. The focused tests passed, launcher lint contained no visual-editor errors, and the actual `123` project linted without errors after 32 Auto events were migrated from `{nw}` plus `pause 2.8` to `{nw=2.8}`. A live run displayed each intro line in its dialogue frame through the configured interval and then entered the prologue. In the assembled editor, mouse focus, Select All, typing, event-row refresh, and exact Stage refresh worked from both the Inspector Text area and a click on the Stage frame. The reported Speaker failure was reproduced as `Sayer '哈喽' is not defined`; typed Speaker values now emit an inline `Character` display name while imported expressions remain unchanged. The input caret is two pixels and its focused background stays dark. Temporary test values never entered the script. Final package and release evidence will be recorded after Step 6.
 
 ## Plan Self-Review
 

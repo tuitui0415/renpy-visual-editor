@@ -125,6 +125,20 @@ def _event_from_statement(
         return Event(event_id, EventKind.CHARACTER, asset=match.group(1), text=statement, note=note)
 
     match = re.fullmatch(
+        rf"Character\((?P<speaker>{QUOTED_STRING})\)\s+(?P<text>{QUOTED_STRING})",
+        statement,
+    )
+    if match:
+        return Event(
+            event_id,
+            EventKind.TEXT,
+            text=_decode_quoted(match.group("text")),
+            speaker=_decode_quoted(match.group("speaker")),
+            advance=AdvanceMode.CLICK,
+            note=note,
+        )
+
+    match = re.fullmatch(
         rf"(?:(?P<speaker>[A-Za-z_][A-Za-z0-9_.]*)\s+)?(?P<text>{QUOTED_STRING})",
         statement,
     )
@@ -136,6 +150,7 @@ def _event_from_statement(
             speaker=match.group("speaker"),
             advance=AdvanceMode.CLICK,
             note=note,
+            speaker_is_expression=bool(match.group("speaker")),
         )
 
     if statement == "pause" or re.fullmatch(r"pause\s+[0-9]+(?:\.[0-9]+)?", statement):
@@ -457,7 +472,14 @@ def _event_statement(event: Event) -> str:
             return _atl_statement(event, asset)
         return f"show expression {asset}"
     if event.kind == EventKind.TEXT:
-        speaker = f"{event.speaker} " if event.speaker else ""
+        speaker = ""
+        if event.speaker:
+            if event.speaker_is_expression:
+                speaker = event.speaker + " "
+            else:
+                speaker = "Character({}) ".format(
+                    json.dumps(event.speaker, ensure_ascii=False)
+                )
         text = event.text or ""
         if event.advance == AdvanceMode.AUTO:
             if event.advance_delay is not None:
