@@ -1,5 +1,7 @@
 # Complete RenPy Visual Editor Implementation Plan
 
+> 本文档是持续维护的实施计划。任务进度、方案调整与实际验证结果应直接更新到本文档，不以预期结果代替实测结果。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build a Windows and macOS custom RenPy distribution whose launcher creates, opens, visually edits, validates, and runs RenPy visual-novel projects.

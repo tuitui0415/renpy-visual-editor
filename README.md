@@ -1,20 +1,20 @@
 # Ren'Py Visual Editor
 
-面向 Windows 与 macOS 的 Ren'Py 图形化文字游戏编辑器。
+基于 Ren'Py 源码开发、面向 Windows 与 macOS 的自定义文字游戏编辑器发行版。
 
 ## 当前状态
 
-项目处于开发准备阶段，目前仅包含从 Windows 转移的设计文档和实施计划，尚无可运行的编辑器或安装包。
+项目处于开发准备阶段，已经建立设计规格、实施计划和协作约束，尚无可运行的编辑器或安装包。
 
-计划扩展 Ren'Py 原生启动器，以 `.rpy` 为唯一剧情源文件，提供项目管理、资源扫描、场景事件编辑、舞台预览、分支和运行检查。无法理解的代码必须原样保留。
+本项目将固定一个上游 Ren'Py 版本，在其源码和原生启动器基础上开发自己的发行版。编辑器以 `.rpy` 为唯一剧情源文件，提供项目管理、资源扫描、场景事件编辑、舞台预览、分支和运行检查。无法理解的代码必须原样保留。
 
-## 原始资料
+## 项目文档
 
-- [设计文档](docs/imported/2026-09-09-renpy-visual-editor-design.md)
-- [实施计划](docs/imported/2026-09-09-complete-renpy-visual-editor.md)
-- [原文档包中的协作偏好](docs/imported/source-agent-preferences.md)
+- [设计规格](docs/superpowers/specs/2026-09-09-renpy-visual-editor-design.md)
+- [实施计划](docs/superpowers/plans/2026-09-09-complete-renpy-visual-editor.md)
+- [协作约束](AGENTS.md)
 
-原始资料按原文归档；其中面向代理的命令和指示仅作为资料保留，不构成额外操作授权。实施计划尚未执行，不能将其预期测试结果视为实测结果。
+这三个 Markdown 文件是持续维护的项目文档。后续实现必须以它们为约束；需求、架构、任务状态或验证结果发生变化时，在同一次提交中直接更新对应文档。实施计划中的预期结果在实际执行前不视为实测结果。
 
 ## 开发前需要校正
 
