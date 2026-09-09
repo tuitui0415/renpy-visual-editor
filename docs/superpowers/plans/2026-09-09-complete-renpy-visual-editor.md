@@ -592,9 +592,11 @@ Selecting a real project background showed `Couldn't find file 'Users/.../assets
 
 Read the selected project image as bytes, use its filename only as a format hint, cache the resulting displayable, and clear the cache when a project is opened or refreshed.
 
-- [ ] **Step 3: Verify and publish alpha.4**
+- [x] **Step 3: Verify and publish alpha.4**
 
 Run the Python suites and RenPy launcher lint, verify the imported salt-lake background in the actual workspace, then build and publish both platform archives from one commit.
+
+**Actual verification (2026-09-09):** The new stage assertion first failed because the launcher still constructed `im.Image` from the absolute project path, then passed after switching to byte-backed `im.Data`. All 47 editor-core tests and eight repository tests passed, and the assembled launcher completed RenPy 8.5.3 lint. The updated launcher entered the actual `1234` visual-editor workspace without an image-load exception. Both alpha.4 archives passed ZIP, manifest, font, target-runtime, and architecture checks; the extracted macOS package also completed launcher lint. GitHub prerelease `v0.1.0-alpha.4` was published from source commit `8e6cf0f`, with uploaded SHA-256 digests matching the verified local files.
 
 ## Plan Self-Review
 
