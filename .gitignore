@@ -1,0 +1,17 @@
+.DS_Store
+Thumbs.db
+Desktop.ini
+__pycache__/
+*.py[cod]
+*.rpyc
+*.rpymc
+.venv/
+venv/
+.pytest_cache/
+.env
+.env.*
+!.env.example
+log.txt
+traceback.txt
+errors.txt
+saves/
