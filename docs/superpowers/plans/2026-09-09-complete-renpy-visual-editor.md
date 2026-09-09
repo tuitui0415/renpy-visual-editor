@@ -486,6 +486,8 @@ Run: `git add src; git commit -m "feat: add validation preview and platform cont
 **Files:**
 - Create: `docs/creator-guide.md`
 - Create: `docs/test-matrix.md`
+- Create: `scripts/package_editor.py`
+- Create: `tests/test_package_editor.py`
 - Modify: `src/launcher/game/options.rpy`
 - Modify: `README.md`
 
@@ -493,11 +495,11 @@ Run: `git add src; git commit -m "feat: add validation preview and platform cont
 - Consumes: the final launcher, project template, core tests, and sample project.
 - Produces: Windows/macOS build instructions and a verified creator workflow.
 
-- [ ] **Step 1: Write the cross-platform acceptance matrix**
+- [x] **Step 1: Write the cross-platform acceptance matrix**
 
 Create `docs/test-matrix.md` with rows for Windows mouse, Windows trackpad, macOS mouse, macOS trackpad, save/load, auto-forward, rollback, video CG, audio fade, choice branch, interaction call, external code refresh, project relocation, and resource case conflict. Each row must list expected behavior and pass/fail status.
 
-- [ ] **Step 2: Run all Python tests and RenPy lint**
+- [x] **Step 2: Run all Python tests and RenPy lint**
 
 Run: `python3 -m unittest discover -s src/launcher/game/visual_editor/tests -v`
 
@@ -507,7 +509,7 @@ Expected: PASS.
 
 From one exact Git commit and the pinned RenPy SDK baseline, create two artifacts: a Windows x86_64 distribution and a macOS universal distribution. Do not maintain platform-specific feature branches. Install each artifact in its target operating system, create the sample project, and execute every applicable row of `docs/test-matrix.md`. A package assembled on macOS is not marked Windows-verified until the Windows rows pass on Windows hardware or a Windows virtual machine.
 
-- [ ] **Step 4: Write the creator guide**
+- [x] **Step 4: Write the creator guide**
 
 Document creating/opening a project, folder-based resource import, event-list authoring, notes, stage drag controls, advancement, video CG, choices, interactive modules, saves, validation, external code editing, and cross-platform filename rules.
 
