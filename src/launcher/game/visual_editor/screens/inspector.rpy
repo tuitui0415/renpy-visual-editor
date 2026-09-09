@@ -1,6 +1,6 @@
-screen visual_editor_inspector():
+screen visual_editor_inspector(panel_width=300):
     frame style "ve_panel":
-        xsize 300
+        xsize panel_width
         yfill True
 
         has vbox

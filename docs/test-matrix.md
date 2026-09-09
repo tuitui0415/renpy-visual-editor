@@ -21,6 +21,7 @@
 | Windows 发行包 | Windows x86_64 | 解压后 `renpy.exe` 启动编辑器并创建、检查、运行项目 | AUTOMATED PASS — 压缩包完整、无其他平台运行时，入口为 PE32+ x86-64；Windows 启动仍为 NOT RUN |
 | macOS 发行包 | Apple Silicon 与 Intel | 解压后应用或脚本启动，二进制同时包含 arm64 和 x86_64 | AUTOMATED PASS — 解压后 `renpy.sh --version` 与启动器 lint 通过，应用入口含 arm64/x86_64；Intel 实机仍为 NOT RUN |
 | macOS 首次启动 | 从 GitHub 下载的 alpha 包 | Control 点击后允许打开，或从终端运行 `./renpy.sh` | PASS — 下载包校验和正确，隔离标记导致 Gatekeeper 拦截，终端入口成功报告固定 Ren'Py 版本；项目签名与公证待配置 |
+| 编辑器三栏布局 | 1440 × 900 虚拟画布，窗口缩放 | 场景/资源、中间舞台/事件和右侧 Inspector 全部位于窗口内，启动器底栏不透出 | AUTOMATED PASS — 列宽总和、全屏模态层和底栏隐藏回归测试；修复前截图已复现溢出 |
 
 ## 自动验证命令
 

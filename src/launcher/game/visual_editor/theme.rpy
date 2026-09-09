@@ -1,6 +1,12 @@
 style ve_toolbar is hbox:
     spacing 8
 
+style ve_root is frame:
+    background Solid("#11151a")
+    padding (10, 10)
+    xfill True
+    yfill True
+
 style ve_columns is hbox:
     spacing 8
 

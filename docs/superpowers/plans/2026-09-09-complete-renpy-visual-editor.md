@@ -519,6 +519,34 @@ Run: `git add docs README.md src/launcher/game/options.rpy; git commit -m "docs:
 
 **Actual verification (2026-09-09):** Five repository tests and 46 editor-core tests passed, and the assembled RenPy 8.5.3 launcher completed lint. Both `0.1.0-alpha.1` archives were generated from one source commit and passed ZIP integrity, target-runtime isolation, manifest, and generated-file exclusion checks. The extracted macOS package reported RenPy `8.5.3.26051504`, completed launcher lint, and contained both arm64 and x86_64 executable slices. The GitHub-downloaded macOS archive matched the published SHA-256 and its terminal entry ran successfully; Gatekeeper blocks direct launch because the alpha lacks the project's own Apple Developer ID signing and notarization, so the creator guide documents the first-launch path. The Windows launcher was confirmed as PE32+ x86-64. Step 3 remains open because Windows startup and the Windows input rows require Windows hardware or a virtual machine; the first public release is therefore a prerelease.
 
+## Task 11: Correct the launcher workspace layout regression
+
+**Files:**
+- Create: `src/launcher/game/visual_editor/core/layout.py`
+- Create: `tests/test_launcher_layout.py`
+- Modify: `src/launcher/game/visual_editor/actions.rpy`
+- Modify: `src/launcher/game/visual_editor/entry.rpy`
+- Modify: `src/launcher/game/visual_editor/screens/workspace.rpy`
+- Modify: `src/launcher/game/visual_editor/screens/inspector.rpy`
+- Modify: `src/launcher/game/visual_editor/screens/event_list.rpy`
+- Modify: `src/launcher/game/visual_editor/theme.rpy`
+
+- [x] **Step 1: Reproduce the overflow and launcher-overlay defects**
+
+The alpha.1 screenshot shows the center `xfill` child consuming the hbox width and moving Inspector off-canvas. The persistent `bottom_info` screen has zorder 100, above the editor's default zorder, while the inherited `l_root` style retains the upstream launcher's 800 × 600 padding assumptions.
+
+- [x] **Step 2: Add failing geometry and screen-isolation tests**
+
+Assert that left, center, right, padding, and gaps total exactly 1440 pixels; the center retains space for the 640-pixel stage; the workspace is a full-size modal screen above the launcher footer; and the workspace label hides `bottom_info`.
+
+- [x] **Step 3: Implement the layout correction**
+
+Use computed explicit column widths, a full-canvas opaque root style, modal input, zorder 200, and hide the launcher footer while the workspace label is active. Replace unsupported separator glyphs with ASCII so the launcher font does not show missing-character boxes.
+
+- [ ] **Step 4: Verify and publish alpha.2**
+
+Run all repository and editor tests, assemble the pinned SDK, run RenPy lint, build both platform archives from the final commit, verify their manifests and architectures, and publish `0.1.0-alpha.2` as a prerelease. Windows UI remains subject to the Windows target rows in the acceptance matrix.
+
 ## Plan Self-Review
 
 Baseline consistency: Task 1 uses the confirmed local RenPy `8.5.3.26051504` SDK as a read-only input, stores only the custom source overlay in Git, and replaces the original Windows-only `Test-Path` checks with cross-platform Python tests.

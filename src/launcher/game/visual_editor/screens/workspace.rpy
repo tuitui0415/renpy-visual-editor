@@ -1,5 +1,9 @@
 screen visual_editor_workspace():
     tag menu
+    modal True
+    zorder 200
+
+    $ visual_editor_left_width, visual_editor_center_width, visual_editor_right_width = visual_editor_calculate_columns(config.screen_width)
 
     key "K_ESCAPE" action Return()
     key "ctrl_K_s" action Function(visual_editor_save)
@@ -18,9 +22,13 @@ screen visual_editor_workspace():
     key "keyup_K_SPACE" action SetVariable("visual_editor_space_down", False)
 
     frame:
-        style "l_root"
+        style "ve_root"
+        xsize config.screen_width
+        ysize config.screen_height
 
-        has vbox
+        has vbox:
+            xfill True
+            yfill True
 
         hbox:
             xfill True
@@ -57,7 +65,7 @@ screen visual_editor_workspace():
             yfill True
 
             vbox:
-                xsize 240
+                xsize visual_editor_left_width
                 yfill True
                 spacing 8
 
@@ -81,7 +89,7 @@ screen visual_editor_workspace():
                 use visual_editor_resources
 
             vbox:
-                xfill True
+                xsize visual_editor_center_width
                 yfill True
                 spacing 8
 
@@ -89,7 +97,7 @@ screen visual_editor_workspace():
 
                 use visual_editor_event_list
 
-            use visual_editor_inspector
+            use visual_editor_inspector(visual_editor_right_width)
 
     if visual_editor_show_validation:
         use visual_editor_validation

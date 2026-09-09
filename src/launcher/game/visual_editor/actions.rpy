@@ -22,6 +22,7 @@ init python:
     from visual_editor.core.editing import redo_workspace as visual_editor_redo_core
     from visual_editor.core.editing import save_workspace as visual_editor_save_core
     from visual_editor.core.editing import undo_workspace as visual_editor_undo_core
+    from visual_editor.core.layout import calculate_editor_columns as visual_editor_calculate_columns
     from visual_editor.core.model import (
         AdvanceMode,
         Attachment,

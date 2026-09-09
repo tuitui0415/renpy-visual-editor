@@ -39,6 +39,8 @@ label visual_editor_new_project:
 
 
 label visual_editor_workspace:
+    hide screen bottom_info
     $ visual_editor_open_project(project.current.path)
     call screen visual_editor_workspace
+    show screen bottom_info
     jump front_page

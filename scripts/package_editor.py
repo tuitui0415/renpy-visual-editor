@@ -14,7 +14,7 @@ from typing import Iterable, Sequence
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SDK = PROJECT_ROOT / ".runtime" / "renpy-8.5.3-sdk"
 DEFAULT_OUTPUT = PROJECT_ROOT / ".dist"
-EDITOR_VERSION = "0.1.0-alpha.1"
+EDITOR_VERSION = "0.1.0-alpha.2"
 RENPY_BUILD = "8.5.3.26051504"
 
 COMMON_ENTRIES = (
