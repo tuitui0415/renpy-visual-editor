@@ -506,6 +506,24 @@ def _advance_statements(mode: AdvanceMode, delay: Optional[float]) -> List[str]:
     return []
 
 
+def emit_event_statements(
+    event: Event,
+    *,
+    include_audio: bool = True,
+    include_advance: bool = True,
+) -> List[str]:
+    """Emit the executable statements for one editable event."""
+
+    statements = []
+    if include_audio:
+        statements.extend(_audio_statements(event.attachments))
+    statements.extend(_event_statement(event).splitlines() or [""])
+    statements.extend(_visual_statements(event.attachments))
+    if include_advance:
+        statements.extend(_advance_statements(event.advance, event.advance_delay))
+    return statements
+
+
 def _emit_managed_event(event: Event) -> str:
     lines = [f"    # visual-editor: begin {event.id}\n"]
     if event.note:
@@ -566,14 +584,7 @@ def _emit_managed_event(event: Event) -> str:
             + json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
             + "\n"
         )
-    for statement in _audio_statements(event.attachments):
-        lines.append(f"    {statement}\n")
-    statement = _event_statement(event)
-    for line in statement.splitlines() or [""]:
-        lines.append(f"    {line}\n")
-    for statement in _visual_statements(event.attachments):
-        lines.append(f"    {statement}\n")
-    for statement in _advance_statements(event.advance, event.advance_delay):
+    for statement in emit_event_statements(event):
         lines.append(f"    {statement}\n")
     lines.append(f"    # visual-editor: end {event.id}\n")
     return "".join(lines)
