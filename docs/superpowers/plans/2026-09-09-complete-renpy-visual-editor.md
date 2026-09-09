@@ -628,7 +628,7 @@ This increment implements the approved “真实游戏画面自动预览” sect
 - Consumes: `Scene`, `Event`, `EventKind`, `AdvanceMode`, and the existing event emitter.
 - Produces: `StageRenderSource(source: str, blocked_reason: Optional[str])`; `build_stage_render_source(scene: Scene, selected_event_id: str) -> StageRenderSource`.
 
-- [ ] **Step 1: Write the failing scene-prefix tests**
+- [x] **Step 1: Write the failing scene-prefix tests**
 
 ```python
 def test_render_source_keeps_visual_state_and_only_current_dialogue(self):
@@ -650,17 +650,17 @@ def test_control_or_code_selection_reports_static_render_reason(self):
     self.assertIn("代码", result.blocked_reason)
 ```
 
-- [ ] **Step 2: Run the tests and confirm the missing module failure**
+- [x] **Step 2: Run the tests and confirm the missing module failure**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_stage_render -v`
 
 Expected: FAIL because `core/stage_render.py` does not exist.
 
-- [ ] **Step 3: Expose reusable event-body emission**
+- [x] **Step 3: Expose reusable event-body emission**
 
 Add `emit_event_statements(event: Event, *, include_audio: bool = True, include_advance: bool = True) -> list[str]` to `rpy_blocks.py`. Make `emit_scene` call it so normal saves retain current behavior. When either flag is false, omit only the corresponding generated statements and metadata; do not alter the event.
 
-- [ ] **Step 4: Implement selected-frame reconstruction**
+- [x] **Step 4: Implement selected-frame reconstruction**
 
 ```python
 @dataclass(frozen=True)
@@ -694,18 +694,20 @@ def build_stage_render_source(scene, selected_event_id):
 
 Treat choices, interactions, and non-editable code as non-executable selections. Preserve the preceding safe visual state and set a Chinese `blocked_reason`; never run their source during automatic rendering.
 
-- [ ] **Step 5: Run the focused and emitter suites**
+- [x] **Step 5: Run the focused and emitter suites**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_stage_render src.launcher.game.visual_editor.tests.test_rpy_blocks src.launcher.game.visual_editor.tests.test_emission -v`
 
 Expected: PASS, with normal save emission unchanged.
 
-- [ ] **Step 6: Commit the safe frame builder**
+- [x] **Step 6: Commit the safe frame builder**
 
 ```bash
 git add -- src/launcher/game/visual_editor/core/stage_render.py src/launcher/game/visual_editor/core/rpy_blocks.py src/launcher/game/visual_editor/tests/test_stage_render.py
 git commit -m "feat: build safe stage render frames"
 ```
+
+**Actual verification (2026-09-09):** The focused test first failed because `core/stage_render.py` was absent. After implementation, 16 safe-frame, parser, and emitter tests passed. Background and character state are retained, earlier dialogue is omitted, and selected code is never emitted.
 
 ### Task 15: Capture one frame with the project’s RenPy runtime
 
@@ -719,7 +721,7 @@ git commit -m "feat: build safe stage render frames"
 - Consumes: `StageRenderSource`.
 - Produces: `StageRenderPaths(entry_path: Path, output_path: Path, log_path: Path, warp_spec: str)`; `StageRenderResult(image_path: Optional[Path], error: Optional[str], source_path: Optional[PurePosixPath], line: Optional[int])`; `write_stage_render_entry(project_dir: Path, render_source: StageRenderSource, output_path: Path, log_path: Path) -> StageRenderPaths`; `build_stage_render_command(renpy_script: Path, python_executable: Path, project_dir: Path, warp_spec: str) -> list[str]`; `run_stage_render(renpy_script: Path, python_executable: Path, project_dir: Path, paths: StageRenderPaths, timeout_seconds: float = 15.0) -> StageRenderResult`; `cleanup_stage_render(paths: StageRenderPaths) -> None`.
 
-- [ ] **Step 1: Write failing capture-source, command, and cleanup tests**
+- [x] **Step 1: Write failing capture-source, command, and cleanup tests**
 
 ```python
 def test_capture_entry_uses_overlay_timer_and_environment_output(self):
@@ -740,13 +742,13 @@ def test_command_runs_project_at_temporary_entry(self):
     self.assertEqual(command[3:], ["run", "--warp", "game/visual_editor_stage_render.rpy:20"])
 ```
 
-- [ ] **Step 2: Run the tests and confirm failure**
+- [x] **Step 2: Run the tests and confirm failure**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_stage_process -v`
 
 Expected: FAIL because `core/stage_process.py` does not exist.
 
-- [ ] **Step 3: Write the self-capturing temporary entry**
+- [x] **Step 3: Write the self-capturing temporary entry**
 
 Prefix the frame source with an early init block and an invisible overlay screen:
 
@@ -771,7 +773,7 @@ screen _visual_editor_stage_capture():
 
 Write this plus the generated label to `game/visual_editor_stage_render.rpy`. Return the label’s actual one-based executable line in the warp spec rather than hard-coding it.
 
-- [ ] **Step 4: Implement the child process and result contract**
+- [x] **Step 4: Implement the child process and result contract**
 
 Use the current RenPy script and adjacent `pythonw`/`pythonw.exe` interpreter. Pass `RENPY_VISUAL_EDITOR_STAGE_OUTPUT`, `RENPY_SKIP_SPLASHSCREEN=1`, `SDL_AUDIODRIVER=dummy`, `SDL_VIDEODRIVER=dummy`, and `RENPY_RENDERER=sw`. Capture stdout/stderr, enforce a 15-second timeout, and return:
 
@@ -786,22 +788,24 @@ class StageRenderResult:
 
 Success requires exit status 0 and a nonempty PNG. On failure, parse the first `File "game/...", line N` location and keep at most the final 20 nonempty log lines in `error`. Always remove the temporary `.rpy` and its `.rpyc`; screenshots live in the launcher’s project temp directory and are replaced atomically.
 
-- [ ] **Step 5: Exclude render artifacts**
+- [x] **Step 5: Exclude render artifacts**
 
 Add `game/visual_editor_stage_render.rpy` to the template `.gitignore`, and add `build.classify("game/visual_editor_stage_render.rpy", None)` beside the current preview exclusion in template `options.rpy`.
 
-- [ ] **Step 6: Run the stage-process and project-template tests**
+- [x] **Step 6: Run the stage-process and project-template tests**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_stage_process src.launcher.game.visual_editor.tests.test_projects -v`
 
 Expected: PASS on POSIX and simulated Windows command inputs.
 
-- [ ] **Step 7: Commit the capture process**
+- [x] **Step 7: Commit the capture process**
 
 ```bash
 git add -- src/launcher/game/visual_editor/core/stage_process.py src/launcher/game/visual_editor/tests/test_stage_process.py src/project_template/.gitignore src/project_template/game/options.rpy
 git commit -m "feat: capture exact project stage frames"
 ```
+
+**Actual verification (2026-09-09):** Eleven process and project-template tests passed. A real RenPy `8.5.3.26051504` run with the dummy video/audio drivers created a nonempty 1280 × 720 PNG and removed the temporary source and bytecode.
 
 ### Task 16: Debounce automatic renders and reject stale frames
 
@@ -812,7 +816,7 @@ git commit -m "feat: capture exact project stage frames"
 **Interfaces:**
 - Produces: `QueuedStageRender(generation: int, payload: object)` and `StageRenderCoordinator.submit(payload: object, now: float) -> int`, `.claim(now: float) -> Optional[QueuedStageRender]`, `.complete(generation: int) -> bool`, `.has_pending -> bool`, `.active -> bool`.
 
-- [ ] **Step 1: Write failing debounce and serialization tests**
+- [x] **Step 1: Write failing debounce and serialization tests**
 
 ```python
 def test_submit_debounces_to_latest_payload(self):
@@ -832,28 +836,30 @@ def test_active_job_blocks_second_claim_and_old_result_is_stale(self):
     self.assertEqual(queue.claim(0.7).generation, second)
 ```
 
-- [ ] **Step 2: Run the tests and confirm failure**
+- [x] **Step 2: Run the tests and confirm failure**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_render_queue -v`
 
 Expected: FAIL because `core/render_queue.py` does not exist.
 
-- [ ] **Step 3: Implement the coordinator with one lock**
+- [x] **Step 3: Implement the coordinator with one lock**
 
 Keep `latest_generation`, one pending payload and due time, and one active generation behind `threading.Lock`. `complete` clears the active job and returns true only when its generation is still the newest submission. Do not create threads or import RenPy in this module.
 
-- [ ] **Step 4: Run queue tests repeatedly**
+- [x] **Step 4: Run queue tests repeatedly**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_render_queue -v`
 
 Expected: PASS in three consecutive invocations without sleeps or timing-dependent assertions.
 
-- [ ] **Step 5: Commit the coordinator**
+- [x] **Step 5: Commit the coordinator**
 
 ```bash
 git add -- src/launcher/game/visual_editor/core/render_queue.py src/launcher/game/visual_editor/tests/test_render_queue.py
 git commit -m "feat: debounce automatic stage rendering"
 ```
+
+**Actual verification (2026-09-09):** All three coordinator tests passed in three consecutive runs without sleeps. A pending edit replaces the earlier payload, one active render blocks the next claim, and stale completion is rejected.
 
 ### Task 17: Connect every selection and edit to the exact Stage frame
 
@@ -869,35 +875,35 @@ git commit -m "feat: debounce automatic stage rendering"
 - Consumes: `StageRenderCoordinator`, `build_stage_render_source`, and `run_stage_render`.
 - Produces: `visual_editor_schedule_stage_render()`, `visual_editor_poll_stage_render()`, `visual_editor_run_stage_render(request)`, `visual_editor_apply_stage_render(generation, result)`, and `aspect_fit_rect(source_width, source_height, target_width, target_height) -> tuple[int, int, int, int]`.
 
-- [ ] **Step 1: Write failing Stage-state and geometry assertions**
+- [x] **Step 1: Write failing Stage-state and geometry assertions**
 
 Assert that the workspace has a repeating 0.1-second render poll, Stage uses the exact-frame displayable when available, status values `waiting`, `rendering`, `ready`, and `error` are visible, the old frame remains under progress/error overlays, and `aspect_fit_rect(1280, 720, 640, 400)` returns `(0, 20, 640, 360)`.
 
-- [ ] **Step 2: Run layout tests and confirm failure**
+- [x] **Step 2: Run layout tests and confirm failure**
 
 Run: `python3 -m unittest tests.test_launcher_layout -v`
 
 Expected: FAIL on the absent render poll, status UI, and aspect-fit helper.
 
-- [ ] **Step 3: Add the launcher render state and worker bridge**
+- [x] **Step 3: Add the launcher render state and worker bridge**
 
 Create one coordinator at launcher init. `visual_editor_schedule_stage_render` deep-copies the selected scene and event ID into a payload, submits it with `time.monotonic()`, sets `waiting`, and restarts interaction. `visual_editor_poll_stage_render` calls `claim`; when it receives a request, set `rendering` and call `renpy.invoke_in_thread(visual_editor_run_stage_render, request)`. The worker writes and runs the temporary entry, then calls `renpy.invoke_in_main_thread(visual_editor_apply_stage_render, generation, result)`.
 
 `visual_editor_apply_stage_render` accepts the PNG only when `coordinator.complete(generation)` is true, reads it through `renpy.display.im.Data`, stores its native dimensions, and sets `ready`. A stale completion leaves the displayed frame unchanged. A current failure sets `error` without clearing the last successful frame.
 
-- [ ] **Step 4: Schedule after every user-visible state change**
+- [x] **Step 4: Schedule after every user-visible state change**
 
 Call the single scheduling helper after project open/refresh, scene selection, event selection, field/numeric/mapping input, insert/move/delete, resource assignment, drag/resize/zoom, attachment changes, advance changes, choice changes, interaction selection, undo, and redo. Repeated keystrokes remain cheap because only the coordinator’s pending payload changes until the 300-millisecond deadline.
 
-- [ ] **Step 5: Replace simulated content with the exact frame**
+- [x] **Step 5: Replace simulated content with the exact frame**
 
 Use `aspect_fit_rect` to draw the PNG inside Stage with black bars. Remove the duplicated selected asset/text rendering when an exact frame is ready. Keep the existing byte-loaded compositor only as the first-render fallback. Draw a transparent selection rectangle and resize handle over supported visual events using the same fitted rectangle; translate pointer positions from the fitted viewport back to normalized project coordinates.
 
-- [ ] **Step 6: Add status and error presentation**
+- [x] **Step 6: Add status and error presentation**
 
 Show a compact `正在刷新…` badge for `waiting` and `rendering`. On `error`, keep the old image and show the parsed message plus source location; on a blocked code/choice/interaction selection, show the safe-render reason without launching project code. Do not open modal dialogs during automatic refresh.
 
-- [ ] **Step 7: Run unit and launcher lint checks**
+- [x] **Step 7: Run unit and launcher lint checks**
 
 Run: `python3 -m unittest discover -s src/launcher/game/visual_editor/tests -v`
 
@@ -909,12 +915,14 @@ Run: `./.runtime/renpy-8.5.3-sdk/renpy.sh .runtime/renpy-8.5.3-sdk/launcher lint
 
 Expected: all Python tests pass and lint contains no visual-editor error.
 
-- [ ] **Step 8: Commit the Stage integration**
+- [x] **Step 8: Commit the Stage integration**
 
 ```bash
 git add -- src/launcher/game/visual_editor/actions.rpy src/launcher/game/visual_editor/screens/stage.rpy src/launcher/game/visual_editor/screens/workspace.rpy src/launcher/game/visual_editor/theme.rpy src/launcher/game/visual_editor/core/layout.py tests/test_launcher_layout.py
 git commit -m "feat: show exact automatic game previews"
 ```
+
+**Actual verification (2026-09-09):** All 58 editor-core tests and 11 repository tests passed, including a real RenPy integration capture. The assembled launcher completed lint with no visual-editor error. The actual `123` project opened in the workspace and displayed its generated frame while the child renderer exited without leaving a window.
 
 ### Task 18: Prove the exact dialogue frame and publish alpha.5
 
@@ -927,29 +935,29 @@ git commit -m "feat: show exact automatic game previews"
 - Modify: `tests/test_package_editor.py`
 - Modify: `docs/superpowers/plans/2026-09-09-complete-renpy-visual-editor.md`
 
-- [ ] **Step 1: Create the RenPy integration fixture**
+- [x] **Step 1: Create the RenPy integration fixture**
 
 Generate a temporary visual project containing a 1280 × 720 blue background, a custom `screen say(who, what)` with a distinctive red bottom dialogue frame, Chinese text, and one positioned character square. Use `write_stage_render_entry` for the text event and the assembled RenPy 8.5.3 runtime to capture its frame.
 
-- [ ] **Step 2: Verify exact rendered pixels and dialogue text presence**
+- [x] **Step 2: Verify exact rendered pixels and dialogue text presence**
 
 Run: `python3 -m unittest tests.test_exact_stage_render -v`
 
 Expected: PASS only when the output is a 1280 × 720 PNG, a background sample is blue, a dialogue-frame sample is red, and the screenshot differs from a control frame without the `say` screen. This verifies actual project-screen use without brittle OCR.
 
-- [ ] **Step 3: Verify the imported project interactively**
+- [x] **Step 3: Verify the imported project interactively**
 
 Open `/Users/yunhanwei/Desktop/天狼星/123`, select representative intro text, prologue text, salt-lake background, and a character-square event. Confirm each selection automatically reaches `ready`, the Chinese dialogue uses the project font and dialogue UI, visual layers match a normal Preview run, and no child render window remains open.
 
-- [ ] **Step 4: Document the workflow and measured limits**
+- [x] **Step 4: Document the workflow and measured limits**
 
 Update the creator guide and test matrix with automatic refresh, the 300-millisecond debounce, the stable-frame treatment for video/transitions, muted audio, blocked code/choice/interaction behavior, last-frame error fallback, and measured macOS render latency. Leave Windows runtime status unverified until a Windows machine runs the corresponding rows.
 
-- [ ] **Step 5: Bump and test alpha.5 packaging**
+- [x] **Step 5: Bump and test alpha.5 packaging**
 
 Set `EDITOR_VERSION` and launcher `config.version` to `0.1.0-alpha.5`, update the package assertion, and run both full Python suites again.
 
-- [ ] **Step 6: Build and verify both archives**
+- [x] **Step 6: Build and verify both archives**
 
 Build from the exact feature commit. Verify ZIP integrity, `BUILD-INFO.json`, absence of temporary render sources and screenshots, bundled font/license, Windows PE32+ x86-64 launcher, macOS arm64/x86_64 slices, extracted macOS `--version`, and extracted launcher lint.
 
