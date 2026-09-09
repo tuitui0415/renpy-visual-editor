@@ -961,13 +961,15 @@ Set `EDITOR_VERSION` and launcher `config.version` to `0.1.0-alpha.5`, update th
 
 Build from the exact feature commit. Verify ZIP integrity, `BUILD-INFO.json`, absence of temporary render sources and screenshots, bundled font/license, Windows PE32+ x86-64 launcher, macOS arm64/x86_64 slices, extracted macOS `--version`, and extracted launcher lint.
 
-- [ ] **Step 7: Publish the GitHub prerelease**
+- [x] **Step 7: Publish the GitHub prerelease**
 
 Publish `v0.1.0-alpha.5` with both archives and release notes describing exact automatic Stage rendering. Confirm GitHub’s asset SHA-256 digests match the local archives and mark alpha.4 as replaced.
 
-- [ ] **Step 8: Record actual results and commit documentation**
+- [x] **Step 8: Record actual results and commit documentation**
 
 Mark completed steps only after their checks run, add commands and observed outcomes to this task’s Actual verification paragraph, then commit and push the living plan update.
+
+**Actual verification (2026-09-09):** The integration test first exposed a one-level software-renderer color rounding difference and then passed with a two-level tolerance. The final run passed all 58 editor-core tests and 11 repository tests, including the real 1280 × 720 capture with blue background, green character, Chinese text, and the project-defined red `screen say`. The actual `123` project rendered representative intro text, prologue text, salt-lake background, and character-square frames in 0.710–0.848 seconds after warm-up. Both archives were built from source commit `56a958e`, passed ZIP integrity and generated-artifact exclusion checks, and contained the bundled CJK font and license. The Windows launcher is PE32+ x86-64; the macOS runtime contains x86_64 and arm64 slices, reports RenPy `8.5.3.26051504`, and completed extracted launcher lint. GitHub prerelease `v0.1.0-alpha.5` was published, alpha.4 was marked as replaced, and GitHub’s recorded digests match the local SHA-256 values: macOS `4cd6f93d2024463a4c9c845f80580d4652cc90889e896ab1eb104e10692d2e5d`, Windows `6a5546bfa8fcdaa3164d903b1a40ac0a30e323af21f6c864a5c2f917f4e3cbda`. Windows runtime behavior remains `NOT RUN` pending a Windows machine.
 
 ## Plan Self-Review
 
