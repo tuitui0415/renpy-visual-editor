@@ -513,9 +513,11 @@ From one exact Git commit and the pinned RenPy SDK baseline, create two artifact
 
 Document creating/opening a project, folder-based resource import, event-list authoring, notes, stage drag controls, advancement, video CG, choices, interactive modules, saves, validation, external code editing, and cross-platform filename rules.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add docs README.md src/launcher/game/options.rpy; git commit -m "docs: add visual editor creator workflow"`
+
+**Actual verification (2026-09-09):** Five repository tests and 46 editor-core tests passed, and the assembled RenPy 8.5.3 launcher completed lint. Both `0.1.0-alpha.1` archives were generated from one source commit and passed ZIP integrity, target-runtime isolation, manifest, and generated-file exclusion checks. The extracted macOS package reported RenPy `8.5.3.26051504`, completed launcher lint, and contained both arm64 and x86_64 executable slices. The Windows launcher was confirmed as PE32+ x86-64. Step 3 remains open because Windows startup and the Windows input rows require Windows hardware or a virtual machine; the first public release is therefore a prerelease.
 
 ## Plan Self-Review
 

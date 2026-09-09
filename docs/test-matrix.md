@@ -18,8 +18,8 @@
 | 外部代码刷新 | 两个平台 | 外部应用打开当前源文件，刷新后重新解析脚本和资源 | AUTOMATED PASS — 命令选择测试；外部应用人工验收待执行 |
 | 项目迁移 | macOS → Windows | 同一项目目录直接打开，路径和结构化数据不转换 | NOT RUN — 需 Windows |
 | 资源大小写冲突 | 两个平台 | 检查报告 `case-collision`，不静默覆盖 | AUTOMATED PASS — 路径验证测试 |
-| Windows 发行包 | Windows x86_64 | 解压后 `renpy.exe` 启动编辑器并创建、检查、运行项目 | NOT RUN — 需 Windows；包内容与 PE x86_64 将在发布前检查 |
-| macOS 发行包 | Apple Silicon 与 Intel | 解压后应用或脚本启动，二进制同时包含 arm64 和 x86_64 | NOT RUN — 发布前执行包内启动与架构检查 |
+| Windows 发行包 | Windows x86_64 | 解压后 `renpy.exe` 启动编辑器并创建、检查、运行项目 | AUTOMATED PASS — 压缩包完整、无其他平台运行时，入口为 PE32+ x86-64；Windows 启动仍为 NOT RUN |
+| macOS 发行包 | Apple Silicon 与 Intel | 解压后应用或脚本启动，二进制同时包含 arm64 和 x86_64 | AUTOMATED PASS — 解压后 `renpy.sh --version` 与启动器 lint 通过，应用入口含 arm64/x86_64；Intel 实机仍为 NOT RUN |
 
 ## 自动验证命令
 
