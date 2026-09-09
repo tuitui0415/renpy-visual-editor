@@ -5,6 +5,8 @@ screen visual_editor_workspace():
 
     $ visual_editor_left_width, visual_editor_center_width, visual_editor_right_width = visual_editor_calculate_columns(config.screen_width)
 
+    timer 0.1 repeat True action Function(visual_editor_poll_stage_render)
+
     key "K_ESCAPE" action Return()
     key "ctrl_K_s" action Function(visual_editor_save)
     key "meta_K_s" action Function(visual_editor_save)

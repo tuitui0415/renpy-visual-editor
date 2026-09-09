@@ -7,8 +7,18 @@ default visual_editor_show_preferences = False
 default visual_editor_space_down = False
 default visual_editor_stage_pan_x = 0
 default visual_editor_stage_pan_y = 0
+default visual_editor_stage_render_status = "idle"
+default visual_editor_stage_render_error = None
+default visual_editor_stage_render_reason = None
+default visual_editor_stage_exact_displayable = None
+default visual_editor_stage_exact_width = 0
+default visual_editor_stage_exact_height = 0
 
 init python:
+    import copy
+    import os
+    import sys
+    import time
     from pathlib import Path
 
     from visual_editor.core.branches import add_choice as visual_editor_add_choice_core
@@ -22,6 +32,7 @@ init python:
     from visual_editor.core.editing import redo_workspace as visual_editor_redo_core
     from visual_editor.core.editing import save_workspace as visual_editor_save_core
     from visual_editor.core.editing import undo_workspace as visual_editor_undo_core
+    from visual_editor.core.layout import aspect_fit_rect as visual_editor_aspect_fit_rect
     from visual_editor.core.layout import calculate_editor_columns as visual_editor_calculate_columns
     from visual_editor.core.model import (
         AdvanceMode,
@@ -36,6 +47,11 @@ init python:
     from visual_editor.core.preview import open_external
     from visual_editor.core.preview import preview_warp_spec
     from visual_editor.core.preview import remove_preview_entry
+    from visual_editor.core.render_queue import StageRenderCoordinator
+    from visual_editor.core.stage_process import StageRenderResult
+    from visual_editor.core.stage_process import run_stage_render
+    from visual_editor.core.stage_process import write_stage_render_entry
+    from visual_editor.core.stage_render import build_stage_render_source
     from visual_editor.core.transforms import assign_resource as visual_editor_assign_resource_core
     from visual_editor.core.transforms import canvas_to_transform as visual_editor_canvas_to_transform
     from visual_editor.core.transforms import set_transform as visual_editor_set_transform_core
@@ -48,6 +64,7 @@ init python:
     VISUAL_EDITOR_STAGE_WIDTH = 640
     VISUAL_EDITOR_STAGE_HEIGHT = 360
     visual_editor_stage_image_cache = {}
+    visual_editor_stage_render_coordinator = StageRenderCoordinator(0.3)
 
     VISUAL_EDITOR_KIND_NAMES = {
         EventKind.SCENE: _("Scene"),
@@ -73,6 +90,108 @@ init python:
         if visual_editor_document is not None:
             visual_editor_checkpoint_core(visual_editor_document)
 
+    def visual_editor_runtime_paths():
+        executable_directory = Path(renpy.fsdecode(sys.executable)).parent
+        extension = ".exe" if renpy.renpy.windows else ""
+        candidates = [
+            executable_directory / ("pythonw" + extension),
+            Path(renpy.fsdecode(sys.executable)),
+        ]
+        python_executable = next(path for path in candidates if path.is_file())
+        return Path(sys.argv[0]), python_executable
+
+    def visual_editor_schedule_stage_render():
+        global visual_editor_stage_render_status, visual_editor_stage_render_error
+        global visual_editor_stage_render_reason
+        if visual_editor_document is None:
+            return
+        scene = visual_editor_document.selected_scene
+        event = visual_editor_document.selected_event
+        if scene is None or event is None:
+            return
+        renpy_script, python_executable = visual_editor_runtime_paths()
+        payload = {
+            "scene": copy.deepcopy(scene),
+            "event_id": event.id,
+            "project_dir": Path(visual_editor_document.project_dir),
+            "output_path": Path(project.current.temp_filename("visual-editor-stage.png")),
+            "log_path": Path(project.current.temp_filename("visual-editor-stage.log")),
+            "renpy_script": renpy_script,
+            "python_executable": python_executable,
+        }
+        visual_editor_stage_render_coordinator.submit(payload, time.monotonic())
+        visual_editor_stage_render_status = "waiting"
+        visual_editor_stage_render_error = None
+        visual_editor_stage_render_reason = None
+        if renpy.get_screen("visual_editor_workspace") is not None:
+            renpy.restart_interaction()
+
+    def visual_editor_poll_stage_render():
+        global visual_editor_stage_render_status
+        request = visual_editor_stage_render_coordinator.claim(time.monotonic())
+        if request is None:
+            return
+        visual_editor_stage_render_status = "rendering"
+        renpy.invoke_in_thread(visual_editor_run_stage_render, request)
+
+    def visual_editor_run_stage_render(request):
+        payload = request.payload
+        try:
+            source = build_stage_render_source(payload["scene"], payload["event_id"])
+            paths = write_stage_render_entry(
+                payload["project_dir"], source, payload["output_path"], payload["log_path"]
+            )
+            result = run_stage_render(
+                payload["renpy_script"],
+                payload["python_executable"],
+                payload["project_dir"],
+                paths,
+            )
+            reason = source.blocked_reason
+        except Exception as error:
+            result = StageRenderResult(None, "无法生成预览：{}".format(error))
+            reason = None
+        renpy.invoke_in_main_thread(
+            visual_editor_apply_stage_render, request.generation, result, reason
+        )
+
+    def visual_editor_apply_stage_render(generation, result, reason):
+        global visual_editor_stage_render_status, visual_editor_stage_render_error
+        global visual_editor_stage_render_reason, visual_editor_stage_exact_displayable
+        global visual_editor_stage_exact_width, visual_editor_stage_exact_height
+        if not visual_editor_stage_render_coordinator.complete(generation):
+            visual_editor_stage_render_status = "waiting"
+            renpy.restart_interaction()
+            return
+        visual_editor_stage_render_reason = reason
+        if result.image_path is not None:
+            frame_bytes = result.image_path.read_bytes()
+            visual_editor_stage_exact_displayable = renpy.display.im.Data(
+                frame_bytes, "visual-editor-stage-{}.png".format(generation)
+            )
+            if frame_bytes[:8] == b"\x89PNG\r\n\x1a\n" and len(frame_bytes) >= 24:
+                visual_editor_stage_exact_width = int.from_bytes(frame_bytes[16:20], "big")
+                visual_editor_stage_exact_height = int.from_bytes(frame_bytes[20:24], "big")
+            visual_editor_stage_render_status = "ready"
+            visual_editor_stage_render_error = None
+        else:
+            visual_editor_stage_render_status = "error"
+            location = ""
+            if result.source_path is not None and result.line is not None:
+                location = "{}:{}\n".format(result.source_path, result.line)
+            visual_editor_stage_render_error = location + (result.error or _("Ren'Py 未生成预览画面。"))
+        renpy.restart_interaction()
+
+    def visual_editor_stage_viewport_rect():
+        if visual_editor_stage_exact_width and visual_editor_stage_exact_height:
+            return visual_editor_aspect_fit_rect(
+                visual_editor_stage_exact_width,
+                visual_editor_stage_exact_height,
+                VISUAL_EDITOR_STAGE_WIDTH,
+                VISUAL_EDITOR_STAGE_HEIGHT,
+            )
+        return (0, 0, VISUAL_EDITOR_STAGE_WIDTH, VISUAL_EDITOR_STAGE_HEIGHT)
+
     class VisualEditorFieldInputValue(InputValue):
         def __init__(self, target, field):
             self.target = target
@@ -85,6 +204,7 @@ init python:
             visual_editor_checkpoint()
             setattr(self.target, self.field, value)
             visual_editor_document.dirty = True
+            visual_editor_schedule_stage_render()
 
     class VisualEditorNumericInputValue(InputValue):
         def __init__(self, target, field, integer=False):
@@ -104,6 +224,7 @@ init python:
             visual_editor_checkpoint()
             setattr(self.target, self.field, number)
             visual_editor_document.dirty = True
+            visual_editor_schedule_stage_render()
 
     class VisualEditorMappingInputValue(InputValue):
         def __init__(self, mapping, key, numeric=False):
@@ -124,6 +245,7 @@ init python:
             visual_editor_checkpoint()
             self.mapping[self.key] = value
             visual_editor_document.dirty = True
+            visual_editor_schedule_stage_render()
 
     class VisualEditorPreferenceInputValue(InputValue):
         def get_text(self):
@@ -134,20 +256,24 @@ init python:
 
     def visual_editor_open_project(project_path):
         global visual_editor_document, visual_editor_resources, visual_editor_module_labels
+        global visual_editor_stage_exact_displayable, visual_editor_stage_render_status
         visual_editor_stage_image_cache.clear()
+        visual_editor_stage_exact_displayable = None
+        visual_editor_stage_render_status = "idle"
         visual_editor_document = visual_editor_load_core(project_path)
         visual_editor_resources = visual_editor_scan_assets(Path(project_path) / "game")
         visual_editor_module_labels = discover_module_labels(Path(project_path) / "game" / "code")
+        visual_editor_schedule_stage_render()
 
     def visual_editor_select_scene(index):
         visual_editor_document.selected_scene_index = index
         scene = visual_editor_document.selected_scene
         visual_editor_document.selected_event_id = scene.events[0].id if scene and scene.events else None
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_select_event(event_id):
         visual_editor_document.selected_event_id = event_id
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_add_event(preset):
         scene = visual_editor_document.selected_scene
@@ -186,7 +312,7 @@ init python:
 
         visual_editor_document.selected_event_id = event.id
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_move_selected(offset):
         scene = visual_editor_document.selected_scene
@@ -199,7 +325,7 @@ init python:
             visual_editor_checkpoint()
             visual_editor_move_core(scene, current, target)
             visual_editor_document.dirty = True
-            renpy.restart_interaction()
+            visual_editor_schedule_stage_render()
 
     def visual_editor_delete_selected():
         scene = visual_editor_document.selected_scene
@@ -214,7 +340,7 @@ init python:
         else:
             visual_editor_document.selected_event_id = None
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_save():
         visual_editor_save_core(visual_editor_document)
@@ -242,7 +368,7 @@ init python:
             renpy.notify(issue.message)
             return
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_stage_displayable(relative_path):
         if not relative_path:
@@ -268,10 +394,10 @@ init python:
         visual_editor_checkpoint()
         drag = drags[0]
         transform = visual_editor_canvas_to_transform(
-            drag.x + drag.w / 2.0 - visual_editor_stage_pan_x,
-            drag.y + drag.h / 2.0 - visual_editor_stage_pan_y,
-            VISUAL_EDITOR_STAGE_WIDTH,
-            VISUAL_EDITOR_STAGE_HEIGHT,
+            drag.x + drag.w / 2.0 - visual_editor_stage_viewport_rect()[0],
+            drag.y + drag.h / 2.0 - visual_editor_stage_viewport_rect()[1],
+            visual_editor_stage_viewport_rect()[2],
+            visual_editor_stage_viewport_rect()[3],
             snap_pixels=8,
         )
         visual_editor_set_transform_core(
@@ -282,7 +408,7 @@ init python:
             event.zorder,
         )
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_resize_dragged(drags, drop):
         event = visual_editor_document.selected_event
@@ -290,13 +416,14 @@ init python:
             return
         visual_editor_checkpoint()
         drag = drags[0]
-        center_x = event.xalign * VISUAL_EDITOR_STAGE_WIDTH + visual_editor_stage_pan_x
-        center_y = event.yalign * VISUAL_EDITOR_STAGE_HEIGHT + visual_editor_stage_pan_y
+        frame_x, frame_y, frame_width, frame_height = visual_editor_stage_viewport_rect()
+        center_x = frame_x + event.xalign * frame_width
+        center_y = frame_y + event.yalign * frame_height
         handle_x = drag.x + drag.w / 2.0
         handle_y = drag.y + drag.h / 2.0
         zoom = max(
-            abs(handle_x - center_x) / 120.0,
-            abs(handle_y - center_y) / 90.0,
+            abs(handle_x - center_x) / max(1.0, frame_width * 0.1875),
+            abs(handle_y - center_y) / max(1.0, frame_height * 0.25),
         )
         visual_editor_set_transform_core(
             event,
@@ -306,7 +433,7 @@ init python:
             event.zorder,
         )
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_adjust_zoom(delta):
         event = visual_editor_document.selected_event
@@ -321,7 +448,7 @@ init python:
             event.zorder,
         )
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_stage_pan_dragged(drags, drop):
         global visual_editor_stage_pan_x, visual_editor_stage_pan_y
@@ -357,7 +484,7 @@ init python:
                 event.advance_delay = 1.0
         visual_editor_set_attachment_core(event, Attachment(kind, parameters=parameters))
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_remove_attachment(kind):
         event = visual_editor_document.selected_event
@@ -366,13 +493,13 @@ init python:
         visual_editor_checkpoint()
         event.attachments[:] = [item for item in event.attachments if item.kind != kind]
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_set_attachment_parameter(attachment, key, value):
         visual_editor_checkpoint()
         attachment.parameters[key] = value
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_attachment_resources(kind):
         resource_kind = ResourceKind.SFX if kind == "sound" else ResourceKind.BGM
@@ -382,7 +509,7 @@ init python:
         visual_editor_checkpoint()
         attachment.parameters["asset"] = relative_path
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_set_advance(mode):
         event = visual_editor_document.selected_event
@@ -395,7 +522,7 @@ init python:
         elif mode not in (AdvanceMode.AUTO, AdvanceMode.VIDEO):
             event.advance_delay = None
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_add_choice():
         event = visual_editor_document.selected_event
@@ -406,7 +533,7 @@ init python:
         visual_editor_add_choice_core(event, _("New option"), scene.label)
         event.advance = AdvanceMode.CHOICE
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_delete_choice(option_id):
         event = visual_editor_document.selected_event
@@ -415,7 +542,7 @@ init python:
         visual_editor_checkpoint()
         visual_editor_delete_choice_core(event, option_id)
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_set_interaction(label):
         event = visual_editor_document.selected_event
@@ -425,15 +552,15 @@ init python:
         event.interaction = InteractionTarget(label, event.interaction.note if event.interaction else "")
         event.advance = AdvanceMode.INTERACTION
         visual_editor_document.dirty = True
-        renpy.restart_interaction()
+        visual_editor_schedule_stage_render()
 
     def visual_editor_undo():
         if visual_editor_document and visual_editor_undo_core(visual_editor_document):
-            renpy.restart_interaction()
+            visual_editor_schedule_stage_render()
 
     def visual_editor_redo():
         if visual_editor_document and visual_editor_redo_core(visual_editor_document):
-            renpy.restart_interaction()
+            visual_editor_schedule_stage_render()
 
     def visual_editor_refresh():
         if visual_editor_document is None:

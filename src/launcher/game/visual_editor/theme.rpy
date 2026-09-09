@@ -33,6 +33,14 @@ style ve_handle is frame:
     background Solid("#5ca9ff")
     padding (0, 0)
 
+style ve_status_badge is frame:
+    background Solid("#11151acc")
+    padding (8, 5)
+
+style ve_error_badge is frame:
+    background Solid("#8f2f36e6")
+    padding (8, 6)
+
 style ve_attachment is frame:
     background Solid("#171b21")
     padding (8, 8)

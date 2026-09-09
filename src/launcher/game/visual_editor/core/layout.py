@@ -11,3 +11,14 @@ def calculate_editor_columns(total_width, horizontal_padding=10, gap=8):
     if center_width <= 0:
         raise ValueError("Editor canvas is too narrow for three columns.")
     return left_width, center_width, right_width
+
+
+def aspect_fit_rect(source_width, source_height, target_width, target_height):
+    """Center a source rectangle inside a target while preserving its aspect ratio."""
+
+    if min(source_width, source_height, target_width, target_height) <= 0:
+        raise ValueError("Aspect-fit dimensions must be positive.")
+    scale = min(target_width / float(source_width), target_height / float(source_height))
+    width = int(round(source_width * scale))
+    height = int(round(source_height * scale))
+    return ((target_width - width) // 2, (target_height - height) // 2, width, height)
