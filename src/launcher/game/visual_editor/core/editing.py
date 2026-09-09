@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import copy
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from .model import AdvanceMode, Attachment, Event, EventKind, Scene
 from .rpy_blocks import parse_editor_blocks, replace_editor_block
@@ -19,6 +20,8 @@ class Workspace:
     selected_scene_index: int = 0
     selected_event_id: Optional[str] = None
     dirty: bool = False
+    undo_stack: List[Tuple[List[Scene], int, Optional[str], bool]] = field(default_factory=list)
+    redo_stack: List[Tuple[List[Scene], int, Optional[str], bool]] = field(default_factory=list)
 
     @property
     def selected_scene(self) -> Optional[Scene]:
@@ -32,6 +35,50 @@ class Workspace:
         if scene is None or self.selected_event_id is None:
             return None
         return next((event for event in scene.events if event.id == self.selected_event_id), None)
+
+
+def _snapshot(workspace: Workspace) -> Tuple[List[Scene], int, Optional[str], bool]:
+    return (
+        copy.deepcopy(workspace.scenes),
+        workspace.selected_scene_index,
+        workspace.selected_event_id,
+        workspace.dirty,
+    )
+
+
+def _restore(workspace: Workspace, snapshot: Tuple[List[Scene], int, Optional[str], bool]) -> None:
+    workspace.scenes = copy.deepcopy(snapshot[0])
+    workspace.selected_scene_index = snapshot[1]
+    workspace.selected_event_id = snapshot[2]
+    workspace.dirty = snapshot[3]
+
+
+def checkpoint_workspace(workspace: Workspace) -> None:
+    """Record a reversible state before an editing action."""
+
+    workspace.undo_stack.append(_snapshot(workspace))
+    del workspace.undo_stack[:-100]
+    workspace.redo_stack.clear()
+
+
+def undo_workspace(workspace: Workspace) -> bool:
+    """Restore the most recent checkpoint."""
+
+    if not workspace.undo_stack:
+        return False
+    workspace.redo_stack.append(_snapshot(workspace))
+    _restore(workspace, workspace.undo_stack.pop())
+    return True
+
+
+def redo_workspace(workspace: Workspace) -> bool:
+    """Restore the most recently undone state."""
+
+    if not workspace.redo_stack:
+        return False
+    workspace.undo_stack.append(_snapshot(workspace))
+    _restore(workspace, workspace.redo_stack.pop())
+    return True
 
 
 def insert_event(

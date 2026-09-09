@@ -3,12 +3,15 @@ import unittest
 from pathlib import Path
 
 from src.launcher.game.visual_editor.core.editing import (
+    checkpoint_workspace,
     delete_event,
     insert_event,
     load_workspace,
     move_event,
+    redo_workspace,
     save_workspace,
     set_note,
+    undo_workspace,
 )
 from src.launcher.game.visual_editor.core.model import Attachment, Event, EventKind, Scene
 
@@ -93,6 +96,16 @@ class WorkspacePersistenceTests(unittest.TestCase):
         saved = self.story_file.read_text(encoding="utf-8")
         self.assertIn('    "新文本"\n', saved)
         self.assertIn("        keep_this_exactly()\n", saved)
+
+    def test_workspace_undo_and_redo_restore_event_edits(self):
+        workspace = load_workspace(self.project_dir)
+        checkpoint_workspace(workspace)
+        workspace.selected_event.text = "新文本"
+
+        self.assertTrue(undo_workspace(workspace))
+        self.assertEqual(workspace.selected_event.text, "旧文本")
+        self.assertTrue(redo_workspace(workspace))
+        self.assertEqual(workspace.selected_event.text, "新文本")
 
 
 if __name__ == "__main__":

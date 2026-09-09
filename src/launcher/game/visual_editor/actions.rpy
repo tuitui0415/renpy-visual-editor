@@ -1,6 +1,12 @@
 default visual_editor_document = None
 default visual_editor_resources = []
 default visual_editor_module_labels = []
+default visual_editor_validation_issues = []
+default visual_editor_show_validation = False
+default visual_editor_show_preferences = False
+default visual_editor_space_down = False
+default visual_editor_stage_pan_x = 0
+default visual_editor_stage_pan_y = 0
 
 init python:
     from pathlib import Path
@@ -9,10 +15,13 @@ init python:
     from visual_editor.core.branches import delete_choice as visual_editor_delete_choice_core
     from visual_editor.core.branches import discover_module_labels
     from visual_editor.core.editing import delete_event as visual_editor_delete_core
+    from visual_editor.core.editing import checkpoint_workspace as visual_editor_checkpoint_core
     from visual_editor.core.editing import insert_event as visual_editor_insert_core
     from visual_editor.core.editing import load_workspace as visual_editor_load_core
     from visual_editor.core.editing import move_event as visual_editor_move_core
+    from visual_editor.core.editing import redo_workspace as visual_editor_redo_core
     from visual_editor.core.editing import save_workspace as visual_editor_save_core
+    from visual_editor.core.editing import undo_workspace as visual_editor_undo_core
     from visual_editor.core.model import (
         AdvanceMode,
         Attachment,
@@ -22,10 +31,18 @@ init python:
         ResourceKind,
     )
     from visual_editor.core.resources import scan_assets as visual_editor_scan_assets
+    from visual_editor.core.preview import create_preview_entry
+    from visual_editor.core.preview import open_external
+    from visual_editor.core.preview import preview_warp_spec
+    from visual_editor.core.preview import remove_preview_entry
     from visual_editor.core.transforms import assign_resource as visual_editor_assign_resource_core
     from visual_editor.core.transforms import canvas_to_transform as visual_editor_canvas_to_transform
     from visual_editor.core.transforms import set_transform as visual_editor_set_transform_core
     from visual_editor.core.transforms import set_attachment as visual_editor_set_attachment_core
+    from visual_editor.core.validation import parse_lint_output, validate_project
+
+    if persistent.visual_editor_external_editor is None:
+        persistent.visual_editor_external_editor = ""
 
     VISUAL_EDITOR_STAGE_WIDTH = 640
     VISUAL_EDITOR_STAGE_HEIGHT = 360
@@ -50,6 +67,10 @@ init python:
         AdvanceMode.CODE: _("Code"),
     }
 
+    def visual_editor_checkpoint():
+        if visual_editor_document is not None:
+            visual_editor_checkpoint_core(visual_editor_document)
+
     class VisualEditorFieldInputValue(InputValue):
         def __init__(self, target, field):
             self.target = target
@@ -59,6 +80,7 @@ init python:
             return getattr(self.target, self.field) or ""
 
         def set_text(self, value):
+            visual_editor_checkpoint()
             setattr(self.target, self.field, value)
             visual_editor_document.dirty = True
 
@@ -77,6 +99,7 @@ init python:
                 number = int(value) if self.integer else float(value)
             except ValueError:
                 return
+            visual_editor_checkpoint()
             setattr(self.target, self.field, number)
             visual_editor_document.dirty = True
 
@@ -96,8 +119,16 @@ init python:
                     value = float(value)
                 except ValueError:
                     return
+            visual_editor_checkpoint()
             self.mapping[self.key] = value
             visual_editor_document.dirty = True
+
+    class VisualEditorPreferenceInputValue(InputValue):
+        def get_text(self):
+            return persistent.visual_editor_external_editor or ""
+
+        def set_text(self, value):
+            persistent.visual_editor_external_editor = value
 
     def visual_editor_open_project(project_path):
         global visual_editor_document, visual_editor_resources, visual_editor_module_labels
@@ -119,6 +150,7 @@ init python:
         scene = visual_editor_document.selected_scene
         if scene is None:
             return
+        visual_editor_checkpoint()
 
         kind = {
             "scene": EventKind.CONTROL,
@@ -161,6 +193,7 @@ init python:
         current = scene.events.index(event)
         target = current + offset
         if 0 <= target < len(scene.events):
+            visual_editor_checkpoint()
             visual_editor_move_core(scene, current, target)
             visual_editor_document.dirty = True
             renpy.restart_interaction()
@@ -170,6 +203,7 @@ init python:
         event = visual_editor_document.selected_event
         if scene is None or event is None:
             return
+        visual_editor_checkpoint()
         index = scene.events.index(event)
         visual_editor_delete_core(scene, event.id)
         if scene.events:
@@ -199,6 +233,7 @@ init python:
         event = visual_editor_document.selected_event
         if event is None:
             return
+        visual_editor_checkpoint()
         issue = visual_editor_assign_resource_core(event, relative_path)
         if issue:
             renpy.notify(issue.message)
@@ -220,10 +255,11 @@ init python:
         event = visual_editor_document.selected_event
         if event is None:
             return
+        visual_editor_checkpoint()
         drag = drags[0]
         transform = visual_editor_canvas_to_transform(
-            drag.x + drag.w / 2.0,
-            drag.y + drag.h / 2.0,
+            drag.x + drag.w / 2.0 - visual_editor_stage_pan_x,
+            drag.y + drag.h / 2.0 - visual_editor_stage_pan_y,
             VISUAL_EDITOR_STAGE_WIDTH,
             VISUAL_EDITOR_STAGE_HEIGHT,
             snap_pixels=8,
@@ -242,9 +278,10 @@ init python:
         event = visual_editor_document.selected_event
         if event is None:
             return
+        visual_editor_checkpoint()
         drag = drags[0]
-        center_x = event.xalign * VISUAL_EDITOR_STAGE_WIDTH
-        center_y = event.yalign * VISUAL_EDITOR_STAGE_HEIGHT
+        center_x = event.xalign * VISUAL_EDITOR_STAGE_WIDTH + visual_editor_stage_pan_x
+        center_y = event.yalign * VISUAL_EDITOR_STAGE_HEIGHT + visual_editor_stage_pan_y
         handle_x = drag.x + drag.w / 2.0
         handle_y = drag.y + drag.h / 2.0
         zoom = max(
@@ -265,6 +302,7 @@ init python:
         event = visual_editor_document.selected_event
         if event is None:
             return
+        visual_editor_checkpoint()
         visual_editor_set_transform_core(
             event,
             event.xalign,
@@ -275,10 +313,24 @@ init python:
         visual_editor_document.dirty = True
         renpy.restart_interaction()
 
+    def visual_editor_stage_pan_dragged(drags, drop):
+        global visual_editor_stage_pan_x, visual_editor_stage_pan_y
+        drag = drags[0]
+        visual_editor_stage_pan_x = drag.x
+        visual_editor_stage_pan_y = drag.y
+        renpy.restart_interaction()
+
+    def visual_editor_reset_stage_view():
+        global visual_editor_stage_pan_x, visual_editor_stage_pan_y
+        visual_editor_stage_pan_x = 0
+        visual_editor_stage_pan_y = 0
+        renpy.restart_interaction()
+
     def visual_editor_add_attachment(kind):
         event = visual_editor_document.selected_event
         if event is None:
             return
+        visual_editor_checkpoint()
         parameters = {}
         if kind == "music":
             parameters = {"asset": "", "loop": True, "fadein": 0.0}
@@ -301,11 +353,13 @@ init python:
         event = visual_editor_document.selected_event
         if event is None:
             return
+        visual_editor_checkpoint()
         event.attachments[:] = [item for item in event.attachments if item.kind != kind]
         visual_editor_document.dirty = True
         renpy.restart_interaction()
 
     def visual_editor_set_attachment_parameter(attachment, key, value):
+        visual_editor_checkpoint()
         attachment.parameters[key] = value
         visual_editor_document.dirty = True
         renpy.restart_interaction()
@@ -315,6 +369,7 @@ init python:
         return [resource for resource in visual_editor_resources if resource.kind == resource_kind]
 
     def visual_editor_assign_attachment_resource(attachment, relative_path):
+        visual_editor_checkpoint()
         attachment.parameters["asset"] = relative_path
         visual_editor_document.dirty = True
         renpy.restart_interaction()
@@ -323,6 +378,7 @@ init python:
         event = visual_editor_document.selected_event
         if event is None:
             return
+        visual_editor_checkpoint()
         event.advance = mode
         if mode in (AdvanceMode.AUTO, AdvanceMode.VIDEO) and event.advance_delay is None:
             event.advance_delay = 1.0
@@ -336,6 +392,7 @@ init python:
         scene = visual_editor_document.selected_scene
         if event is None or scene is None:
             return
+        visual_editor_checkpoint()
         visual_editor_add_choice_core(event, _("New option"), scene.label)
         event.advance = AdvanceMode.CHOICE
         visual_editor_document.dirty = True
@@ -345,6 +402,7 @@ init python:
         event = visual_editor_document.selected_event
         if event is None:
             return
+        visual_editor_checkpoint()
         visual_editor_delete_choice_core(event, option_id)
         visual_editor_document.dirty = True
         renpy.restart_interaction()
@@ -353,10 +411,57 @@ init python:
         event = visual_editor_document.selected_event
         if event is None:
             return
+        visual_editor_checkpoint()
         event.interaction = InteractionTarget(label, event.interaction.note if event.interaction else "")
         event.advance = AdvanceMode.INTERACTION
         visual_editor_document.dirty = True
         renpy.restart_interaction()
+
+    def visual_editor_undo():
+        if visual_editor_document and visual_editor_undo_core(visual_editor_document):
+            renpy.restart_interaction()
+
+    def visual_editor_redo():
+        if visual_editor_document and visual_editor_redo_core(visual_editor_document):
+            renpy.restart_interaction()
+
+    def visual_editor_refresh():
+        if visual_editor_document is None:
+            return
+        visual_editor_open_project(visual_editor_document.project_dir)
+        renpy.notify(_("Visual editor project refreshed."))
+        renpy.restart_interaction()
+
+    def visual_editor_validate():
+        global visual_editor_validation_issues, visual_editor_show_validation
+        visual_editor_validation_issues = validate_project(Path(project.current.path))
+        lint_file = Path(project.current.temp_filename("visual-editor-lint.txt"))
+        project.current.launch(["lint", str(lint_file)], wait=True)
+        if lint_file.is_file():
+            visual_editor_validation_issues.extend(
+                parse_lint_output(lint_file.read_text(encoding="utf-8", errors="replace"))
+            )
+        visual_editor_show_validation = True
+        renpy.restart_interaction()
+
+    def visual_editor_preview_scene():
+        scene = visual_editor_document.selected_scene
+        if scene is None:
+            return
+        visual_editor_save_core(visual_editor_document)
+        create_preview_entry(Path(project.current.path), scene.label)
+        try:
+            project.current.launch(["run", "--warp", preview_warp_spec(project.current.path)], wait=True)
+        finally:
+            remove_preview_entry(Path(project.current.path))
+        renpy.restart_interaction()
+
+    def visual_editor_open_external():
+        scene = visual_editor_document.selected_scene
+        if scene is None:
+            return
+        source_file = visual_editor_document.scene_files[scene.label]
+        open_external(source_file, persistent.visual_editor_external_editor or None)
 
     def visual_editor_event_summary(event):
         if event.choices:

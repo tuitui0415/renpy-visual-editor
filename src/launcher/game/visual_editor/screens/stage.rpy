@@ -9,6 +9,7 @@ screen visual_editor_stage():
             null width 16
             textbutton _("Zoom −") action Function(visual_editor_adjust_zoom, -0.1)
             textbutton _("Zoom +") action Function(visual_editor_adjust_zoom, 0.1)
+            textbutton _("Fit") action Function(visual_editor_reset_stage_view)
 
         null height 8
 
@@ -18,6 +19,21 @@ screen visual_editor_stage():
             xalign 0.5
 
             add Solid("#11151a")
+
+            draggroup:
+                drag:
+                    drag_name "visual-editor-stage-pan"
+                    draggable visual_editor_space_down
+                    droppable False
+                    drag_offscreen True
+                    dragged visual_editor_stage_pan_dragged
+                    xpos visual_editor_stage_pan_x
+                    ypos visual_editor_stage_pan_y
+
+                    frame:
+                        background Solid("#00000000")
+                        xsize VISUAL_EDITOR_STAGE_WIDTH
+                        ysize VISUAL_EDITOR_STAGE_HEIGHT
 
             $ selected_event = visual_editor_document.selected_event
             if selected_event and selected_event.kind in (EventKind.BACKGROUND, EventKind.CHARACTER, EventKind.CG, EventKind.TEXT):
@@ -30,8 +46,8 @@ screen visual_editor_stage():
                         draggable (selected_event.kind != EventKind.BACKGROUND)
                         droppable False
                         dragged visual_editor_stage_dragged
-                        xpos int(selected_event.xalign * VISUAL_EDITOR_STAGE_WIDTH)
-                        ypos int(selected_event.yalign * VISUAL_EDITOR_STAGE_HEIGHT)
+                        xpos int(selected_event.xalign * VISUAL_EDITOR_STAGE_WIDTH + visual_editor_stage_pan_x)
+                        ypos int(selected_event.yalign * VISUAL_EDITOR_STAGE_HEIGHT + visual_editor_stage_pan_y)
                         xanchor 0.5
                         yanchor 0.5
 
@@ -58,8 +74,8 @@ screen visual_editor_stage():
                             draggable True
                             droppable False
                             dragged visual_editor_resize_dragged
-                            xpos int(selected_event.xalign * VISUAL_EDITOR_STAGE_WIDTH + item_width / 2)
-                            ypos int(selected_event.yalign * VISUAL_EDITOR_STAGE_HEIGHT + item_height / 2)
+                            xpos int(selected_event.xalign * VISUAL_EDITOR_STAGE_WIDTH + item_width / 2 + visual_editor_stage_pan_x)
+                            ypos int(selected_event.yalign * VISUAL_EDITOR_STAGE_HEIGHT + item_height / 2 + visual_editor_stage_pan_y)
                             xanchor 0.5
                             yanchor 0.5
 

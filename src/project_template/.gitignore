@@ -1,0 +1,7 @@
+game/.visual_editor_preview.rpy
+game/*.rpyc
+game/**/*.rpyc
+game/saves/
+log.txt
+traceback.txt
+errors.txt

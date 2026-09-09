@@ -34,3 +34,7 @@ style ve_attachment is frame:
 style ve_branch_graph is frame:
     background Solid("#171b21")
     padding (8, 8)
+
+style ve_modal is frame:
+    background Solid("#20242b")
+    padding (20, 20)

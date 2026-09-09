@@ -434,15 +434,20 @@ Run: `git add src; git commit -m "feat: add choices and interaction insertion"`
 
 **Files:**
 - Create: `src/launcher/game/visual_editor/core/preview.py`
+- Create: `src/launcher/game/visual_editor/core/validation.py`
 - Create: `src/launcher/game/visual_editor/screens/validation.rpy`
 - Create: `src/launcher/game/visual_editor/screens/preferences.rpy`
 - Create: `src/launcher/game/visual_editor/tests/test_validation.py`
+- Create: `src/project_template/game/options.rpy`
+- Modify: `src/launcher/game/visual_editor/actions.rpy`
+- Modify: `src/launcher/game/visual_editor/core/editing.py`
+- Modify: `src/launcher/game/visual_editor/screens/workspace.rpy`
 - Modify: `src/launcher/game/visual_editor/theme.rpy`
 
 **Interfaces:**
 - Produces: `validate_project(base_dir: Path) -> list[ValidationIssue]`, `create_preview_entry(project: Path, label: str) -> Path`, and `open_external(path: Path) -> None`.
 
-- [ ] **Step 1: Write failing validation tests**
+- [x] **Step 1: Write failing validation tests**
 
 ```python
 def test_validation_reports_missing_resource_and_unresolved_choice(self):
@@ -454,25 +459,27 @@ def test_preview_entry_jumps_to_requested_scene(self):
     assert 'jump chapter_01.salt_lake' in entry.read_text(encoding="utf-8")
 ```
 
-- [ ] **Step 2: Run tests to confirm failure**
+- [x] **Step 2: Run tests to confirm failure**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_validation -v`
 
 Expected: FAIL because validation and preview modules are absent.
 
-- [ ] **Step 3: Implement validation and controls**
+- [x] **Step 3: Implement validation and controls**
 
 Validate missing assets, portable paths, duplicate labels, empty choices, unresolved targets, missing gameplay labels, parser fallback blocks, and RenPy lint output. Generate a temporary preview entry excluded from normal distribution, run it from the selected label, then remove it after execution. Store external-editor configuration only in launcher preferences. Bind Ctrl on Windows and Command on macOS for Save, Run, Refresh, Undo, Redo, and Open External; bind Space-drag for canvas pan and wheel/touchpad scrolling for lists.
 
-- [ ] **Step 4: Run validation tests and lint a sample project**
+- [x] **Step 4: Run validation tests and lint a sample project**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_validation -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add src; git commit -m "feat: add validation preview and platform controls"`
+
+**Actual verification (2026-09-09):** The validation tests first failed because preview and validation modules did not exist, then five validation/preview tests and one workspace undo/redo test passed. The full suite through Task 9 passed 50 tests. RenPy 8.5.3 lint passed for the assembled launcher and for the project template while its temporary preview entry was present. The editor now merges its structural checks with RenPy lint locations, previews the selected scene using a temporary warp entry, excludes that entry from distributions and project Git, opens the scene source externally, refreshes external edits, keeps 100 undo checkpoints, and binds Ctrl on Windows plus Command on macOS.
 
 ## Task 10: Verify distributions and document the complete workflow
 
