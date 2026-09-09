@@ -54,6 +54,14 @@ class ValidationIssue:
     severity: str = "error"
 
 
+@dataclass(frozen=True)
+class Transform:
+    xalign: float = 0.5
+    yalign: float = 0.5
+    zoom: float = 1.0
+    zorder: int = 0
+
+
 @dataclass
 class Attachment:
     kind: str

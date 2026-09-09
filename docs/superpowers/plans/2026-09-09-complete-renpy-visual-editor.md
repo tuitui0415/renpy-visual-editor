@@ -295,6 +295,7 @@ Run: `git add src/launcher/game/visual_editor; git commit -m "feat: add visual e
 ## Task 6: Add Inspector editing, resources, notes, and direct stage manipulation
 
 **Files:**
+- Create: `src/launcher/game/visual_editor/core/transforms.py`
 - Create: `src/launcher/game/visual_editor/screens/inspector.rpy`
 - Create: `src/launcher/game/visual_editor/screens/resources.rpy`
 - Create: `src/launcher/game/visual_editor/screens/stage.rpy`
@@ -304,7 +305,7 @@ Run: `git add src/launcher/game/visual_editor; git commit -m "feat: add visual e
 - Consumes: selected `Event` and scanned `Resource` values.
 - Produces: `assign_resource(event_id, relative_path)`, `set_transform(event_id, xalign, yalign, zoom, zorder)`, and `set_attachment(event_id, attachment)`.
 
-- [ ] **Step 1: Write failing transform tests**
+- [x] **Step 1: Write failing transform tests**
 
 ```python
 def test_drag_result_is_relative_and_not_pixel_based(self):
@@ -316,25 +317,27 @@ def test_character_assignment_rejects_background_asset(self):
     assert assign_resource_to_kind(EventKind.CHARACTER, "assets/backgrounds/rain.png").code == "kind-mismatch"
 ```
 
-- [ ] **Step 2: Run tests to confirm failure**
+- [x] **Step 2: Run tests to confirm failure**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_transforms -v`
 
 Expected: FAIL because transform conversion is absent.
 
-- [ ] **Step 3: Implement Inspector, scanning list, and canvas**
+- [x] **Step 3: Implement Inspector, scanning list, and canvas**
 
 Show only resources valid for the selected event kind. For characters, list complete images from the selected character folder. Render selected background, character, video placeholder, and overlay text on the stage. Add selection bounds, drag movement, resize handles, center/edge snapping, and Inspector numeric fields. Persist `xalign`, `yalign`, `zoom`, and `zorder` through the emitter. Provide note editing for every event and attachment.
 
-- [ ] **Step 4: Run transform tests to confirm success**
+- [x] **Step 4: Run transform tests to confirm success**
 
 Run: `python3 -m unittest src.launcher.game.visual_editor.tests.test_transforms -v`
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 Run: `git add src/launcher/game/visual_editor; git commit -m "feat: add stage inspector and resource assignment"`
+
+**Actual verification (2026-09-09):** The transform test module first failed because `core/transforms.py` did not exist, then all seven transform tests passed. Coverage includes pixel-to-relative conversion, center and edge snapping, resource-kind rejection, valid assignment, bounded position and zoom values, attachment replacement, and transform metadata round trips. The full suite through Task 6 passed 33 tests. The reassembled RenPy 8.5.3 launcher completed lint after replacing unsupported `add` fill properties with explicit preview dimensions, with no visual-editor errors or warnings.
 
 ## Task 7: Implement visual, audio, video, and advancement attachments
 

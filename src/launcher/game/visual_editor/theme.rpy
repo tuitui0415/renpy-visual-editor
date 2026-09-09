@@ -18,3 +18,11 @@ style ve_muted is text:
 
 style ve_selected_button is button:
     background Solid("#35506f")
+
+style ve_selection is frame:
+    background Solid("#29313b80")
+    padding (2, 2)
+
+style ve_handle is frame:
+    background Solid("#5ca9ff")
+    padding (0, 0)

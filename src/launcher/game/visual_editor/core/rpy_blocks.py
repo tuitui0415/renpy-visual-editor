@@ -19,6 +19,9 @@ BEGIN_PATTERN = re.compile(
     re.MULTILINE,
 )
 NOTE_PATTERN = re.compile(r"^[ \t]*# visual-editor-note:(?: )?(?P<note>.*?)(?:\n|$)")
+TRANSFORM_PATTERN = re.compile(
+    r"^[ \t]*# visual-editor-transform:(?: )?(?P<transform>.*?)(?:\n|$)"
+)
 QUOTED_STRING = r'"(?:\\.|[^"\\])*"'
 
 
@@ -119,14 +122,25 @@ def _event_from_statement(
 
 def _parse_managed_block(block: str, event_id: str) -> Event:
     notes = []
+    transform = None
     statement_lines = []
     for line in block.splitlines(keepends=True):
         note_match = NOTE_PATTERN.match(line)
         if note_match:
             notes.append(note_match.group("note"))
+            continue
+        transform_match = TRANSFORM_PATTERN.match(line)
+        if transform_match:
+            transform = json.loads(transform_match.group("transform"))
         else:
             statement_lines.append(line)
-    return _event_from_statement("".join(statement_lines), event_id, "\n".join(notes), block)
+    event = _event_from_statement("".join(statement_lines), event_id, "\n".join(notes), block)
+    if transform is not None:
+        event.xalign = float(transform["xalign"])
+        event.yalign = float(transform["yalign"])
+        event.zoom = float(transform["zoom"])
+        event.zorder = int(transform["zorder"])
+    return event
 
 
 def _indent_width(line: str) -> int:
@@ -257,6 +271,18 @@ def _emit_managed_event(event: Event) -> str:
     if event.note:
         for note_line in event.note.split("\n"):
             lines.append(f"    # visual-editor-note: {note_line}\n")
+    if (event.xalign, event.yalign, event.zoom, event.zorder) != (0.5, 0.5, 1.0, 0):
+        transform = {
+            "xalign": event.xalign,
+            "yalign": event.yalign,
+            "zoom": event.zoom,
+            "zorder": event.zorder,
+        }
+        lines.append(
+            "    # visual-editor-transform: "
+            + json.dumps(transform, ensure_ascii=False, separators=(",", ":"))
+            + "\n"
+        )
     statement = _event_statement(event)
     for line in statement.splitlines() or [""]:
         lines.append(f"    {line}\n")

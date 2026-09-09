@@ -35,35 +35,36 @@ screen visual_editor_workspace():
             xfill True
             yfill True
 
-            frame style "ve_panel":
+            vbox:
                 xsize 240
                 yfill True
+                spacing 8
 
-                has vbox
-                text _("Scenes") style "ve_heading"
-                null height 8
-
-                viewport:
-                    mousewheel True
+                frame style "ve_panel":
+                    xfill True
+                    ysize 220
 
                     has vbox
-                    for index, scene in enumerate(visual_editor_document.scenes):
-                        textbutton "[scene.label]":
-                            action Function(visual_editor_select_scene, index)
-                            selected (index == visual_editor_document.selected_scene_index)
+                    text _("Scenes") style "ve_heading"
+                    null height 8
+
+                    viewport:
+                        mousewheel True
+
+                        has vbox
+                        for index, scene in enumerate(visual_editor_document.scenes):
+                            textbutton "[scene.label]":
+                                action Function(visual_editor_select_scene, index)
+                                selected (index == visual_editor_document.selected_scene_index)
+
+                use visual_editor_resources
 
             vbox:
                 xfill True
                 yfill True
                 spacing 8
 
-                frame style "ve_panel":
-                    xfill True
-                    ysize 300
-
-                    has vbox
-                    text _("Stage Preview") style "ve_heading"
-                    text _("Direct stage manipulation is added in Task 6.") style "ve_muted"
+                use visual_editor_stage
 
                 use visual_editor_event_list
 

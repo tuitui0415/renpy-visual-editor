@@ -1,12 +1,22 @@
 default visual_editor_document = None
+default visual_editor_resources = []
 
 init python:
+    from pathlib import Path
+
     from visual_editor.core.editing import delete_event as visual_editor_delete_core
     from visual_editor.core.editing import insert_event as visual_editor_insert_core
     from visual_editor.core.editing import load_workspace as visual_editor_load_core
     from visual_editor.core.editing import move_event as visual_editor_move_core
     from visual_editor.core.editing import save_workspace as visual_editor_save_core
-    from visual_editor.core.model import EventKind
+    from visual_editor.core.model import AdvanceMode, EventKind
+    from visual_editor.core.resources import scan_assets as visual_editor_scan_assets
+    from visual_editor.core.transforms import assign_resource as visual_editor_assign_resource_core
+    from visual_editor.core.transforms import canvas_to_transform as visual_editor_canvas_to_transform
+    from visual_editor.core.transforms import set_transform as visual_editor_set_transform_core
+
+    VISUAL_EDITOR_STAGE_WIDTH = 640
+    VISUAL_EDITOR_STAGE_HEIGHT = 360
 
     VISUAL_EDITOR_KIND_NAMES = {
         EventKind.SCENE: _("Scene"),
@@ -16,6 +26,16 @@ init python:
         EventKind.TEXT: _("Text"),
         EventKind.CONTROL: _("Control"),
         EventKind.CODE: _("Code"),
+    }
+
+    VISUAL_EDITOR_ADVANCE_NAMES = {
+        AdvanceMode.IMMEDIATE: _("Immediate"),
+        AdvanceMode.CLICK: _("Click"),
+        AdvanceMode.AUTO: _("Auto"),
+        AdvanceMode.VIDEO: _("Video"),
+        AdvanceMode.CHOICE: _("Choice"),
+        AdvanceMode.INTERACTION: _("Interaction"),
+        AdvanceMode.CODE: _("Code"),
     }
 
     class VisualEditorFieldInputValue(InputValue):
@@ -30,9 +50,28 @@ init python:
             setattr(self.target, self.field, value)
             visual_editor_document.dirty = True
 
+    class VisualEditorNumericInputValue(InputValue):
+        def __init__(self, target, field, integer=False):
+            self.target = target
+            self.field = field
+            self.integer = integer
+
+        def get_text(self):
+            value = getattr(self.target, self.field)
+            return str(value)
+
+        def set_text(self, value):
+            try:
+                number = int(value) if self.integer else float(value)
+            except ValueError:
+                return
+            setattr(self.target, self.field, number)
+            visual_editor_document.dirty = True
+
     def visual_editor_open_project(project_path):
-        global visual_editor_document
+        global visual_editor_document, visual_editor_resources
         visual_editor_document = visual_editor_load_core(project_path)
+        visual_editor_resources = visual_editor_scan_assets(Path(project_path) / "game")
 
     def visual_editor_select_scene(index):
         visual_editor_document.selected_scene_index = index
@@ -107,6 +146,98 @@ init python:
     def visual_editor_save():
         visual_editor_save_core(visual_editor_document)
         renpy.notify(_("Visual editor project saved."))
+
+    def visual_editor_compatible_resources(event):
+        if event is None:
+            return []
+        return [
+            resource for resource in visual_editor_resources
+            if {
+                EventKind.BACKGROUND: "background",
+                EventKind.CHARACTER: "character",
+                EventKind.CG: "cg",
+            }.get(event.kind) == resource.kind.value
+        ]
+
+    def visual_editor_assign_resource(relative_path):
+        event = visual_editor_document.selected_event
+        if event is None:
+            return
+        issue = visual_editor_assign_resource_core(event, relative_path)
+        if issue:
+            renpy.notify(issue.message)
+            return
+        visual_editor_document.dirty = True
+        renpy.restart_interaction()
+
+    def visual_editor_stage_displayable(relative_path):
+        if not relative_path:
+            return Solid("#303640")
+        if relative_path.lower().endswith((".webm", ".mp4", ".mkv")):
+            return Text(_("Video: {}").format(relative_path), color="#ffffff", size=18)
+        path = Path(project.current.path) / "game" / relative_path
+        if not path.is_file():
+            return Text(_("Missing: {}").format(relative_path), color="#ff8d8d", size=18)
+        return renpy.display.im.Image(str(path))
+
+    def visual_editor_stage_dragged(drags, drop):
+        event = visual_editor_document.selected_event
+        if event is None:
+            return
+        drag = drags[0]
+        transform = visual_editor_canvas_to_transform(
+            drag.x + drag.w / 2.0,
+            drag.y + drag.h / 2.0,
+            VISUAL_EDITOR_STAGE_WIDTH,
+            VISUAL_EDITOR_STAGE_HEIGHT,
+            snap_pixels=8,
+        )
+        visual_editor_set_transform_core(
+            event,
+            transform.xalign,
+            transform.yalign,
+            event.zoom,
+            event.zorder,
+        )
+        visual_editor_document.dirty = True
+        renpy.restart_interaction()
+
+    def visual_editor_resize_dragged(drags, drop):
+        event = visual_editor_document.selected_event
+        if event is None:
+            return
+        drag = drags[0]
+        center_x = event.xalign * VISUAL_EDITOR_STAGE_WIDTH
+        center_y = event.yalign * VISUAL_EDITOR_STAGE_HEIGHT
+        handle_x = drag.x + drag.w / 2.0
+        handle_y = drag.y + drag.h / 2.0
+        zoom = max(
+            abs(handle_x - center_x) / 120.0,
+            abs(handle_y - center_y) / 90.0,
+        )
+        visual_editor_set_transform_core(
+            event,
+            event.xalign,
+            event.yalign,
+            zoom,
+            event.zorder,
+        )
+        visual_editor_document.dirty = True
+        renpy.restart_interaction()
+
+    def visual_editor_adjust_zoom(delta):
+        event = visual_editor_document.selected_event
+        if event is None:
+            return
+        visual_editor_set_transform_core(
+            event,
+            event.xalign,
+            event.yalign,
+            event.zoom + delta,
+            event.zorder,
+        )
+        visual_editor_document.dirty = True
+        renpy.restart_interaction()
 
     def visual_editor_event_summary(event):
         if event.kind == EventKind.TEXT:
